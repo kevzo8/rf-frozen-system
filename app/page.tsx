@@ -418,10 +418,7 @@ export default function Shop() {
                   {fulfillment === "pickup" ? (
                     <p>PICKUP — {BRANCHES.find((b) => b.id === branch)?.label} branch</p>
                   ) : (
-                    <div className="mt-0.5">
-                      <p>DELIVERY ADDRESS:</p>
-                      <p><b>{address.trim() || "(address)"}</b></p>
-                    </div>
+                    <p>DELIVERY ADDRESS: <b>{address.trim() || "(address)"}</b></p>
                   )}
                   {cart.length > 0 ? (
                     <ul className="mt-1 list-disc pl-5">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
