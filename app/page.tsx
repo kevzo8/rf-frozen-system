@@ -91,6 +91,14 @@ export default function Shop() {
     setLookup(data?.value ?? data ?? null);
   }
 
+  function scrollToOrder(e?: React.MouseEvent) {
+    e?.preventDefault();
+    const el = document.getElementById("order");
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 96;
+    window.scrollTo({ top, behavior: "smooth" });
+  }
+
   return (
     <div className="min-h-screen text-base text-slate-800 dark:text-rose-50 font-body overflow-x-clip">
       {[0, 1, 2].map((i) => (
@@ -106,7 +114,7 @@ export default function Shop() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
-            <a href="#order" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-gradient-to-r from-red-900 via-red-700 to-orange-500 px-5 py-2 text-base font-semibold text-white shadow-lg shadow-red-900/30 transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2"><ShoppingCart size={18} aria-hidden /> Order now</a>
+            <a href="#order" onClick={scrollToOrder} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-gradient-to-r from-red-900 via-red-700 to-orange-500 px-5 py-2 text-base font-semibold text-white shadow-lg shadow-red-900/30 transition hover:scale-105 focus-visible:outline-2 focus-visible:outline-offset-2"><ShoppingCart size={18} aria-hidden /> Order now</a>
             <a href="/admin/login" className="hidden sm:inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base font-semibold glass"><Store size={17} aria-hidden /> Staff</a>
           </div>
         </div>
@@ -142,7 +150,7 @@ export default function Shop() {
                 <span className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-slate-900 dark:bg-amber-200 px-4 py-2 font-mono text-sm font-bold text-amber-100 dark:text-red-950 shadow">
                   <Tag size={15} aria-hidden /> PRICE AS OF: {updatedAt ?? "loading..."}
                 </span>
-                <a href="#order" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-gradient-to-r from-red-900 via-red-700 to-orange-500 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-red-900/30 transition hover:scale-105">Order now <ArrowRight size={18} aria-hidden /></a>
+                <a href="#order" onClick={scrollToOrder} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-gradient-to-r from-red-900 via-red-700 to-orange-500 px-6 py-2.5 text-base font-bold text-white shadow-lg shadow-red-900/30 transition hover:scale-105">Order now <ArrowRight size={18} aria-hidden /></a>
               </div>
               <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">Sept 29 sample — changes daily by supply &amp; demand.<br />Ordering at: <b>{BRANCHES.find((b) => b.id === branch)?.label}</b></p>
             </div>
