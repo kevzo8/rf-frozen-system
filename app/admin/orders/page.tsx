@@ -77,7 +77,7 @@ function OrdersBoardInner() {
                 {isSel && <span className="rounded-full bg-red-700 px-2 py-0.5 text-[11px] font-bold text-white">BILLING THIS ONE</span>}
                 <span className="ml-auto rounded-full bg-slate-900 dark:bg-amber-200 dark:text-red-950 text-white px-2 py-0.5 text-[11px] font-bold">{o.status}</span>
               </div>
-              <p className="font-semibold">{o.customerName} • {o.branch} • ₱{(o.finalTotal ?? o.estimateTotal).toLocaleString()}</p>
+              <p className="font-semibold">{o.companyName ? <>{o.companyName} <span className="font-normal opacity-70">({o.contactName ?? o.customerName})</span></> : (o.contactName ?? o.customerName)} • {o.branch} • ₱{(o.finalTotal ?? o.estimateTotal).toLocaleString()}</p>
               <p className="text-sm opacity-70">{o.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button onClick={() => { setSel(o); setFinal(String(o.finalTotal ?? o.estimateTotal)); setMode(o.paymentMode ?? "GCASH"); setOs(o.osNo ?? ""); setInv(o.invoiceNo ?? ""); document.getElementById("bill-panel")?.scrollIntoView({ behavior: "smooth", block: "nearest" }); }} aria-pressed={isSel} className={`inline-flex min-h-[44px] items-center gap-1.5 rounded-xl px-4 py-2 text-base font-bold focus-visible:outline-2 ${isSel ? "bg-gradient-to-r from-red-800 to-orange-500 text-white shadow-lg" : "bg-slate-900 text-white dark:bg-amber-200 dark:text-red-950"}`}><Wallet size={17} aria-hidden /> {isSel ? "Billing this order..." : "Set final bill"}</button>

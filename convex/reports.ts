@@ -36,7 +36,7 @@ export const cash = query({
       if (m === "CASH") cash += amt;
       else if (m === "GCASH" || m === "MAYA") gcash += amt;
       else if (m) bank += amt;
-      return { or: o.invoiceNo ?? o.osNo ?? o.trackingId, name: o.customerName, bill: amt, cash: m === "CASH" ? amt : "", gcash: m === "GCASH" || m === "MAYA" ? amt : "", bank: m && m !== "CASH" && m !== "GCASH" && m !== "MAYA" ? amt : "", mode: o.paymentMode ?? "", tracking: o.trackingId, status: o.status };
+      return { or: o.invoiceNo ?? o.osNo ?? o.trackingId, name: o.customerName, contact: o.contactName ?? o.customerName, company: o.companyName ?? "", bill: amt, cash: m === "CASH" ? amt : "", gcash: m === "GCASH" || m === "MAYA" ? amt : "", bank: m && m !== "CASH" && m !== "GCASH" && m !== "MAYA" ? amt : "", mode: o.paymentMode ?? "", tracking: o.trackingId, status: o.status };
     });
     return { lines, totals: { bill, cash, gcash, bank } };
   },
@@ -59,7 +59,7 @@ export const sales = query({
       bill += amt;
       const m = (o.paymentMode ?? "").toUpperCase();
       if (m === "CASH") cash += amt; else if (m === "GCASH" || m === "MAYA") gcash += amt; else if (m) bank += amt;
-      return { date: new Date(o.createdAt).toISOString().slice(0, 10), si: o.invoiceNo ?? "", name: o.customerName, bill: amt, cash: m === "CASH" ? amt : "", gcash: m === "GCASH" || m === "MAYA" ? amt : "", bank: m && m !== "CASH" && m !== "GCASH" && m !== "MAYA" ? amt : "", balance: o.status === "to_pay" || o.status === "placed" ? amt : "", remarks: `${o.paymentMode ?? ""} ${o.trackingId}` };
+      return { date: new Date(o.createdAt).toISOString().slice(0, 10), si: o.invoiceNo ?? "", name: o.customerName, contact: o.contactName ?? o.customerName, company: o.companyName ?? "", bill: amt, cash: m === "CASH" ? amt : "", gcash: m === "GCASH" || m === "MAYA" ? amt : "", bank: m && m !== "CASH" && m !== "GCASH" && m !== "MAYA" ? amt : "", balance: o.status === "to_pay" || o.status === "placed" ? amt : "", remarks: `${o.paymentMode ?? ""} ${o.trackingId}` };
     });
     return { lines, totals: { bill, cash, gcash, bank } };
   },
@@ -84,7 +84,8 @@ export const credit = query({
     }
     return [...byCustomer.entries()].map(([, list]) => ({
       customer: list[0].customerName.trim().replace(/\s+/g, " ").toUpperCase(),
-      lines: list.map((o) => ({ date: new Date(o.createdAt).toISOString().slice(0, 10), or: o.invoiceNo ?? o.trackingId, bill: o.finalTotal ?? o.estimateTotal, payment: o.status, balance: o.finalTotal ?? o.estimateTotal })),
+      companies: [...new Set(list.map((o) => (o.companyName ?? "").trim()).filter(Boolean))],
+      lines: list.map((o) => ({ date: new Date(o.createdAt).toISOString().slice(0, 10), or: o.invoiceNo ?? o.trackingId, contact: o.contactName ?? o.customerName, company: o.companyName ?? "", bill: o.finalTotal ?? o.estimateTotal, payment: o.status, balance: o.finalTotal ?? o.estimateTotal })),
       total: list.reduce((s, o) => s + (o.finalTotal ?? o.estimateTotal), 0),
     }));
   },
@@ -99,6 +100,6 @@ export const receipts = query({
     const all = await ctx.db.query("orders").collect();
     return all
       .filter((o) => (u.branch !== "all" ? o.branch === u.branch : args.branch === "all" ? true : o.branch === args.branch) && o.createdAt >= start && o.createdAt < end)
-      .map((o) => ({ trackingId: o.trackingId, os: o.osNo ?? "", inv: o.invoiceNo ?? "", customer: o.customerName, address: o.address ?? "", items: o.items, total: o.finalTotal ?? o.estimateTotal, status: o.status }));
+      .map((o) => ({ trackingId: o.trackingId, os: o.osNo ?? "", inv: o.invoiceNo ?? "", customer: o.customerName, contact: o.contactName ?? o.customerName, company: o.companyName ?? "", fulfillment: o.fulfillment ?? "", address: o.address ?? "", items: o.items, total: o.finalTotal ?? o.estimateTotal, status: o.status }));
   },
 });

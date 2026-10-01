@@ -36,26 +36,26 @@ function ReportsInner() {
     if (tab === "cash" && cash) {
       const ws = wb.addWorksheet(date);
       ws.addRow(["CASH REPORT"]); ws.addRow(["DATE", date]);
-      ws.addRow(["OR #", "NAME", "BILL", "CASH", "GCASH", "B.TRANSFER", "REF", "REMARKS"]);
-      for (const l of cash.lines as any[]) ws.addRow([l.or, l.name, l.bill, l.cash, l.gcash, l.bank, l.tracking, l.status]);
+      ws.addRow(["OR #", "CONTACT", "COMPANY", "BILL", "CASH", "GCASH", "B.TRANSFER", "REF", "REMARKS"]);
+      for (const l of cash.lines as any[]) ws.addRow([l.or, l.contact, l.company, l.bill, l.cash, l.gcash, l.bank, l.tracking, l.status]);
       ws.addRow(["TOTAL", "", cash.totals.bill, cash.totals.cash, cash.totals.gcash, cash.totals.bank]);
     } else if (tab === "sales" && sales) {
       const ws = wb.addWorksheet(date);
       ws.addRow(["INVOICE & SALES REPORT"]);
-      ws.addRow(["DATE", "SI #", "NAME", "BILL", "CASH", "GCASH", "BANK T.", "BALANCE", "REMARKS"]);
-      for (const l of sales.lines as any[]) ws.addRow([l.date, l.si, l.name, l.bill, l.cash, l.gcash, l.bank, l.balance, l.remarks]);
+      ws.addRow(["DATE", "SI #", "CONTACT", "COMPANY", "BILL", "CASH", "GCASH", "BANK T.", "BALANCE", "REMARKS"]);
+      for (const l of sales.lines as any[]) ws.addRow([l.date, l.si, l.contact, l.company, l.bill, l.cash, l.gcash, l.bank, l.balance, l.remarks]);
       ws.addRow(["TOTAL", "", "", sales.totals.bill, sales.totals.cash, sales.totals.gcash, sales.totals.bank]);
     } else if (tab === "credit" && credit) {
       for (const c of credit as any[]) {
         const ws = wb.addWorksheet(String(c.customer).slice(0, 30));
-        ws.addRow([c.customer]); ws.addRow(["DATE", "OR #", "BILL", "PAYMENT", "BALANCE"]);
-        for (const l of c.lines) ws.addRow([l.date, l.or, l.bill, l.payment, l.balance]);
+        ws.addRow([c.customer]); ws.addRow(["DATE", "OR #", "CONTACT", "COMPANY", "BILL", "PAYMENT", "BALANCE"]);
+        for (const l of c.lines) ws.addRow([l.date, l.or, l.contact, l.company, l.bill, l.payment, l.balance]);
         ws.addRow(["TOTAL", "", c.total]);
       }
     } else if (tab === "receipt" && receipts) {
       const ws = wb.addWorksheet("receipts");
-      ws.addRow(["OS#", "INV#", "CUSTOMER", "ADDRESS", "ITEMS", "TOTAL", "STATUS"]);
-      for (const r of receipts as any[]) ws.addRow([r.os, r.inv, r.customer, r.address, r.items.map((i: any) => `${i.productName}x${i.qtyBox}`).join("; "), r.total, r.status]);
+      ws.addRow(["OS#", "INV#", "CONTACT", "COMPANY", "PICKUP/DELIVERY", "ADDRESS", "ITEMS", "TOTAL", "STATUS"]);
+      for (const r of receipts as any[]) ws.addRow([r.os, r.inv, r.contact, r.company, r.fulfillment, r.address, r.items.map((i: any) => `${i.productName}x${i.qtyBox}`).join("; "), r.total, r.status]);
     }
     const buf = await wb.xlsx.writeBuffer();
     const a = document.createElement("a");
@@ -92,20 +92,21 @@ function ReportsInner() {
         <>
         {tab === "cash" && cash && (
           <div className="glass rounded-2xl overflow-auto"><table className="w-full">
-            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">OR#</th><th className="p-2">NAME</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">TRACKING</th></tr></thead>
-            <tbody>{(cash.lines as any[]).map((l: any) => <tr key={l.tracking} className="border-t"><td className="p-2 font-mono text-xs">{l.or}</td><td className="p-2">{l.name}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 font-mono text-xs">{l.tracking}</td></tr>)}</tbody>
+            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">OR#</th><th className="p-2">CONTACT</th><th className="p-2">COMPANY</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">TRACKING</th></tr></thead>
+            <tbody>{(cash.lines as any[]).map((l: any) => <tr key={l.tracking} className="border-t"><td className="p-2 font-mono text-xs">{l.or}</td><td className="p-2">{l.contact}</td><td className="p-2">{l.company || "—"}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 font-mono text-xs">{l.tracking}</td></tr>)}</tbody>
           </table><p className="p-2 font-bold">TOTAL BILL ₱{cash.totals.bill.toLocaleString()} • CASH ₱{cash.totals.cash.toLocaleString()} • GCASH ₱{cash.totals.gcash.toLocaleString()} • BANK ₱{cash.totals.bank.toLocaleString()}</p></div>
         )}
         {tab === "sales" && sales && (
           <div className="glass rounded-2xl overflow-auto"><table className="w-full">
-            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">SI#</th><th className="p-2">NAME</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">REMARKS</th></tr></thead>
-            <tbody>{(sales.lines as any[]).map((l: any, i: number) => <tr key={i} className="border-t"><td className="p-2 font-mono text-xs">{l.si}</td><td className="p-2">{l.name}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 text-xs">{l.remarks}</td></tr>)}</tbody>
+            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">SI#</th><th className="p-2">CONTACT</th><th className="p-2">COMPANY</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">REMARKS</th></tr></thead>
+            <tbody>{(sales.lines as any[]).map((l: any, i: number) => <tr key={i} className="border-t"><td className="p-2 font-mono text-xs">{l.si}</td><td className="p-2">{l.contact}</td><td className="p-2">{l.company || "—"}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 text-xs">{l.remarks}</td></tr>)}</tbody>
           </table><p className="p-2 font-bold">TOTAL ₱{sales.totals.bill.toLocaleString()}</p></div>
         )}
         {tab === "credit" && credit && (
           <div className="space-y-2">{(credit as any[]).map((c: any) => (
             <div key={c.customer} className="glass rounded-2xl p-3"><p className="font-bold">{c.customer} — ₱{c.total.toLocaleString()}</p>
-              {c.lines.map((l: any, i: number) => <p key={i} className="text-xs font-mono">{l.date} {l.or} ₱{l.bill} [{l.payment}]</p>)}
+              {c.companies?.length > 0 && <p className="text-xs opacity-70">Companies: {c.companies.join(" • ")}</p>}
+              {c.lines.map((l: any, i: number) => <p key={i} className="text-xs font-mono">{l.date} {l.or} {l.contact}{l.company ? ` (${l.company})` : ""} ₱{l.bill} [{l.payment}]</p>)}
             </div>))}
             {(credit as any[]).length === 0 && <p className="opacity-60">No unpaid orders.</p>}
           </div>
@@ -113,7 +114,7 @@ function ReportsInner() {
         {tab === "receipt" && receipts && (
           <div className="space-y-2">{(receipts as any[]).map((r: any) => (
             <div key={r.trackingId} className="glass rounded-2xl p-3"><p className="font-mono text-xs"><a href={`/track/${r.trackingId}`} className="underline">{r.trackingId}</a> • OS {r.os} • INV {r.inv} • [{r.status}]</p>
-              <p className="font-semibold">{r.customer} — ₱{r.total.toLocaleString()} [{r.status}]</p>
+              <p className="font-semibold">{r.company ? <>{r.company} <span className="font-normal opacity-70">({r.contact})</span></> : r.contact} — ₱{r.total.toLocaleString()}</p>
               <p className="text-xs">{r.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
             </div>))}
           </div>
