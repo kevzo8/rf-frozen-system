@@ -1,5 +1,5 @@
 "use client";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { use, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
@@ -14,7 +14,26 @@ const LABEL: Record<string, string> = {
 export default function TrackPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const order = useQuery((api as any)?.orders?.getByTracking, { trackingId: (id as string).toLowerCase() });
+  const getUrl = useMutation((api as any)?.proofStorage?.uploadUrl);
+  const link = useMutation((api as any)?.orders?.linkProof);
   const [file, setFile] = useState<File | null>(null);
+  const [mode, setMode] = useState("GCASH");
+  const [busy, setBusy] = useState(false);
+
+  async function upload() {
+    if (!file || !order) return;
+    setBusy(true);
+    try {
+      const url = await (getUrl as any)({});
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file });
+      const { storageId } = await res.json();
+      await (link as any)({ trackingId: order.trackingId, fileId: storageId, fileName: file.name, mode, amount: order.finalTotal ?? order.estimateTotal });
+      alert("Proof uploaded — biller will verify.");
+      setFile(null);
+    } finally {
+      setBusy(false);
+    }
+  }
 
   if (!order) return <main className="min-h-screen flex items-center justify-center text-sm text-slate-600">Loading {id}...</main>;
 
@@ -52,8 +71,13 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
         <div className="glass rounded-3xl p-6">
           <h2 className="font-bold text-slate-900">Upload proof of payment</h2>
           <p className="text-xs text-slate-500">GCash / Maya screenshot or photo of cash receipt. Biller verifies after.</p>
-          <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="mt-2 text-sm text-slate-700" />
-          <button onClick={() => alert(file ? `Selected: ${file.name} — full upload wiring next` : "Choose a file first")} className="mt-2 rounded-xl bg-gradient-to-r from-red-800 to-red-600 px-4 py-2 text-sm font-bold text-white">Upload proof</button>
+          <div className="mt-2 flex flex-wrap gap-2 items-center">
+            <select value={mode} onChange={(e) => setMode(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm">
+              {["GCASH", "MAYA", "BDO", "GOTYME", "CASH"].map((m) => <option key={m}>{m}</option>)}
+            </select>
+            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
+            <button onClick={upload} disabled={busy || !file} className="rounded-xl bg-gradient-to-r from-red-800 to-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{busy ? "Uploading..." : "Upload proof"}</button>
+          </div>
         </div>
       </main>
     </div>

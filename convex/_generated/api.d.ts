@@ -11,6 +11,8 @@
 import type * as auth from "../auth.js";
 import type * as orders from "../orders.js";
 import type * as prices from "../prices.js";
+import type * as proofStorage from "../proofStorage.js";
+import type * as reports from "../reports.js";
 import type * as seedPrices from "../seedPrices.js";
 import type * as setup from "../setup.js";
 
@@ -24,6 +26,8 @@ declare const fullApi: ApiFromModules<{
   auth: typeof auth;
   orders: typeof orders;
   prices: typeof prices;
+  proofStorage: typeof proofStorage;
+  reports: typeof reports;
   seedPrices: typeof seedPrices;
   setup: typeof setup;
 }>;

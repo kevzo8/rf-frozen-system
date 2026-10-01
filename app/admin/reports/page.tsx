@@ -1,0 +1,116 @@
+"use client";
+import { useQuery } from "convex/react";
+import { api } from "../../../convex/_generated/api";
+import { getToken } from "../../../lib/auth-token";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import ThemeToggle from "../../../components/ThemeToggle";
+
+export const dynamic = "force-dynamic";
+const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
+
+export default function Reports() {
+  const router = useRouter();
+  const [token, setTok] = useState<string | null>(null);
+  const [branch, setBranch] = useState("stamesa");
+  const [date, setDate] = useState(() => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10));
+  const [tab, setTab] = useState<"cash" | "sales" | "credit" | "receipt">("cash");
+  useEffect(() => {
+    const t = getToken();
+    if (!t) router.push("/admin/login");
+    else setTok(t);
+  }, [router]);
+
+  const cash = useQuery((api as any)?.reports?.cash, token && tab === "cash" ? { token, branch, date } : "skip");
+  const sales = useQuery((api as any)?.reports?.sales, token && tab === "sales" ? { token, branch, date } : "skip");
+  const credit = useQuery((api as any)?.reports?.credit, token && tab === "credit" ? { token, branch } : "skip");
+  const receipts = useQuery((api as any)?.reports?.receipts, token && tab === "receipt" ? { token, branch, date } : "skip");
+
+  async function exportXlsx() {
+    const ExcelJS = (await import("exceljs")).default;
+    const wb = new ExcelJS.Workbook();
+    if (tab === "cash" && cash) {
+      const ws = wb.addWorksheet(date);
+      ws.addRow(["CASH REPORT"]); ws.addRow(["DATE", date]);
+      ws.addRow(["OR #", "NAME", "BILL", "CASH", "GCASH", "B.TRANSFER", "REF", "REMARKS"]);
+      for (const l of cash.lines as any[]) ws.addRow([l.or, l.name, l.bill, l.cash, l.gcash, l.bank, l.tracking, l.status]);
+      ws.addRow(["TOTAL", "", cash.totals.bill, cash.totals.cash, cash.totals.gcash, cash.totals.bank]);
+    } else if (tab === "sales" && sales) {
+      const ws = wb.addWorksheet(date);
+      ws.addRow(["INVOICE & SALES REPORT"]);
+      ws.addRow(["DATE", "SI #", "NAME", "BILL", "CASH", "GCASH", "BANK T.", "BALANCE", "REMARKS"]);
+      for (const l of sales.lines as any[]) ws.addRow([l.date, l.si, l.name, l.bill, l.cash, l.gcash, l.bank, l.balance, l.remarks]);
+      ws.addRow(["TOTAL", "", "", sales.totals.bill, sales.totals.cash, sales.totals.gcash, sales.totals.bank]);
+    } else if (tab === "credit" && credit) {
+      for (const c of credit as any[]) {
+        const ws = wb.addWorksheet(String(c.customer).slice(0, 30));
+        ws.addRow([c.customer]); ws.addRow(["DATE", "OR #", "BILL", "PAYMENT", "BALANCE"]);
+        for (const l of c.lines) ws.addRow([l.date, l.or, l.bill, l.payment, l.balance]);
+        ws.addRow(["TOTAL", "", c.total]);
+      }
+    } else if (tab === "receipt" && receipts) {
+      const ws = wb.addWorksheet("receipts");
+      ws.addRow(["OS#", "INV#", "CUSTOMER", "ADDRESS", "ITEMS", "TOTAL", "STATUS"]);
+      for (const r of receipts as any[]) ws.addRow([r.os, r.inv, r.customer, r.address, r.items.map((i: any) => `${i.productName}x${i.qtyBox}`).join("; "), r.total, r.status]);
+    }
+    const buf = await wb.xlsx.writeBuffer();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([buf as any], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" }));
+    a.download = `rf-${tab}-${branch}-${date}.xlsx`;
+    a.click();
+  }
+
+  if (!token) return <main className="p-8 text-sm">Loading...</main>;
+
+  return (
+    <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
+      <header className="glass sticky top-0 z-20 border-b">
+        <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2 flex-wrap">
+          <a href="/admin" className="glass rounded-full px-3 py-1 text-sm">← Admin</a>
+          <h1 className="font-display font-bold">Reports — cash / credit / sales / receipt</h1>
+          <div className="ml-auto flex gap-2 items-center">
+            <select value={branch} onChange={(e) => setBranch(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm">{BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}</select>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm" />
+            <button onClick={exportXlsx} className="rounded-xl bg-slate-900 text-white px-3 py-1.5 text-sm font-bold">Export xlsx</button>
+            <ThemeToggle />
+          </div>
+        </div>
+        <div className="mx-auto max-w-6xl px-5 pb-2 flex gap-1.5">
+          {(["cash", "sales", "credit", "receipt"] as const).map((t) => (
+            <button key={t} onClick={() => setTab(t)} className={`rounded-full px-3 py-1 text-xs font-bold ${tab === t ? "bg-slate-900 text-white" : "glass"}`}>{t}</button>
+          ))}
+        </div>
+      </header>
+      <main className="mx-auto max-w-6xl px-5 py-4 text-sm">
+        {tab === "cash" && cash && (
+          <div className="glass rounded-2xl overflow-auto"><table className="w-full">
+            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">OR#</th><th className="p-2">NAME</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">TRACKING</th></tr></thead>
+            <tbody>{(cash.lines as any[]).map((l: any) => <tr key={l.tracking} className="border-t"><td className="p-2 font-mono text-xs">{l.or}</td><td className="p-2">{l.name}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 font-mono text-xs">{l.tracking}</td></tr>)}</tbody>
+          </table><p className="p-2 font-bold">TOTAL BILL ₱{cash.totals.bill.toLocaleString()} • CASH ₱{cash.totals.cash.toLocaleString()} • GCASH ₱{cash.totals.gcash.toLocaleString()} • BANK ₱{cash.totals.bank.toLocaleString()}</p></div>
+        )}
+        {tab === "sales" && sales && (
+          <div className="glass rounded-2xl overflow-auto"><table className="w-full">
+            <thead><tr className="text-left text-xs opacity-60"><th className="p-2">SI#</th><th className="p-2">NAME</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">REMARKS</th></tr></thead>
+            <tbody>{(sales.lines as any[]).map((l: any, i: number) => <tr key={i} className="border-t"><td className="p-2 font-mono text-xs">{l.si}</td><td className="p-2">{l.name}</td><td className="p-2">{l.bill}</td><td className="p-2">{l.cash}</td><td className="p-2">{l.gcash}</td><td className="p-2">{l.bank}</td><td className="p-2 text-xs">{l.remarks}</td></tr>)}</tbody>
+          </table><p className="p-2 font-bold">TOTAL ₱{sales.totals.bill.toLocaleString()}</p></div>
+        )}
+        {tab === "credit" && credit && (
+          <div className="space-y-2">{(credit as any[]).map((c: any) => (
+            <div key={c.customer} className="glass rounded-2xl p-3"><p className="font-bold">{c.customer} — ₱{c.total.toLocaleString()}</p>
+              {c.lines.map((l: any, i: number) => <p key={i} className="text-xs font-mono">{l.date} {l.or} ₱{l.bill} [{l.payment}]</p>)}
+            </div>))}
+            {(credit as any[]).length === 0 && <p className="opacity-60">No unpaid orders.</p>}
+          </div>
+        )}
+        {tab === "receipt" && receipts && (
+          <div className="space-y-2">{(receipts as any[]).map((r: any) => (
+            <div key={r.trackingId} className="glass rounded-2xl p-3"><p className="font-mono text-xs">{r.trackingId} • OS {r.os} • INV {r.inv}</p>
+              <p className="font-semibold">{r.customer} — ₱{r.total.toLocaleString()} [{r.status}]</p>
+              <p className="text-xs">{r.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
+            </div>))}
+          </div>
+        )}
+      </main>
+    </div>
+  );
+}

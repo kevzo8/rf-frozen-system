@@ -40,11 +40,17 @@ export default function AdminHome() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-8">
+    <main className="mx-auto max-w-3xl p-8 font-body">
       <div className="flex justify-between items-center">
-        <h1 className="text-xl font-bold">RF Admin - {me?.displayName} ({me?.role}/{me?.branch})</h1>
+        <h1 className="font-display text-xl font-bold">RF Admin - {me?.displayName} ({me?.role}/{me?.branch})</h1>
         <button onClick={doLogout} className="border px-3 py-1 rounded">Logout</button>
       </div>
+      <nav className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-2 text-sm font-semibold">
+        <a href="/admin/orders" className="glass rounded-2xl p-3 text-center">🧾 Orders board</a>
+        <a href="/admin/prices" className="glass rounded-2xl p-3 text-center">🏷 Prices</a>
+        <a href="/admin/reports" className="glass rounded-2xl p-3 text-center">📊 Reports + xlsx</a>
+        <a href="/admin/storage" className="glass rounded-2xl p-3 text-center">🗂 Storage export</a>
+      </nav>
       {me?.role === "admin" ? (
         <section className="mt-6">
           <h2 className="font-semibold">Create account (admin only)</h2>
