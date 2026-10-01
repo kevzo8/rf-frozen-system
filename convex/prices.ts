@@ -16,12 +16,12 @@ async function requireStaff(ctx: any, token: string) {
 }
 
 export const upsert = mutation({
-  args: { token: v.string(), productName: v.string(), price: v.number() },
+  args: { token: v.string(), productName: v.string(), price: v.number(), notes: v.optional(v.string()) },
   handler: async (ctx, args) => {
     const u: any = await requireStaff(ctx, args.token);
     const existing = await ctx.db.query("prices").withIndex("by_product", (q) => q.eq("productName", args.productName)).unique();
-    if (existing) await ctx.db.patch(existing._id, { price: args.price, updatedAt: Date.now(), updatedBy: u.username, source: "manual" });
-    else await ctx.db.insert("prices", { productName: args.productName, price: args.price, updatedAt: Date.now(), updatedBy: u.username, source: "manual" });
+    if (existing) await ctx.db.patch(existing._id, { price: args.price, notes: args.notes, updatedAt: Date.now(), updatedBy: u.username, source: "manual" });
+    else await ctx.db.insert("prices", { productName: args.productName, price: args.price, notes: args.notes, updatedAt: Date.now(), updatedBy: u.username, source: "manual" });
     const prod = await ctx.db.query("products").withIndex("by_name", (q) => q.eq("name", args.productName)).unique();
     if (!prod) await ctx.db.insert("products", { name: args.productName, active: true });
     return true;
@@ -29,13 +29,14 @@ export const upsert = mutation({
 });
 
 export const bulkImport = mutation({
-  args: { token: v.string(), rows: v.array(v.object({ productName: v.string(), price: v.number() })) },
+  // xlsx format: col A = name, col B = price, col C = notes (optional, e.g. "parating pa lang mamaya")
+  args: { token: v.string(), rows: v.array(v.object({ productName: v.string(), price: v.number(), notes: v.optional(v.string()) })) },
   handler: async (ctx, args) => {
     const u: any = await requireStaff(ctx, args.token);
     for (const r of args.rows) {
       const existing = await ctx.db.query("prices").withIndex("by_product", (q) => q.eq("productName", r.productName)).unique();
-      if (existing) await ctx.db.patch(existing._id, { price: r.price, updatedAt: Date.now(), updatedBy: u.username, source: "xlsx" });
-      else await ctx.db.insert("prices", { productName: r.productName, price: r.price, updatedAt: Date.now(), updatedBy: u.username, source: "xlsx" });
+      if (existing) await ctx.db.patch(existing._id, { price: r.price, notes: r.notes, updatedAt: Date.now(), updatedBy: u.username, source: "xlsx" });
+      else await ctx.db.insert("prices", { productName: r.productName, price: r.price, notes: r.notes, updatedAt: Date.now(), updatedBy: u.username, source: "xlsx" });
       const prod = await ctx.db.query("products").withIndex("by_name", (q) => q.eq("name", r.productName)).unique();
       if (!prod) await ctx.db.insert("products", { name: r.productName, active: true });
     }

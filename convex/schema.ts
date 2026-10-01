@@ -26,6 +26,7 @@ export default defineSchema({
   prices: defineTable({
     productName: v.string(),
     price: v.number(),
+    notes: v.optional(v.string()), // e.g. "parating pa lang mamaya", "no return", "limited"
     updatedAt: v.number(),
     updatedBy: v.string(),
     source: v.union(v.literal("manual"), v.literal("xlsx")),

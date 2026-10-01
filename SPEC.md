@@ -19,7 +19,7 @@ Side: cancelled, returned
 
 ## Prices
 Seed: PRICE UPDATE 9/29 list (disclaimer: example only, changes daily by supply/demand).
-Admin: edit name+price, upload xlsx (name,price), timestamp + by whom. Customer sees estimate + disclaimer subject to availability.
+Admin: edit name+price+notes, upload xlsx with 3 columns (A=name, B=price, C=notes e.g. "parating pa lang mamaya" - notes optional, leave blank if none). Timestamp + by whom. Customer sees estimate + notes badge + disclaimer subject to availability.
 
 ## Customer portal `/` (no login)
 Inputs: name, mobile, address, branch, items (searchable dropdown from ITEM LIST ~1000 SKUs), qty boxes.

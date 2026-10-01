@@ -29,6 +29,7 @@ export default function Shop() {
   const [mobile, setMobile] = useState("");
   const [address, setAddress] = useState("");
   const [search, setSearch] = useState("");
+  const [sort, setSort] = useState<"name" | "low" | "high">("name");
   const [cart, setCart] = useState<{ productName: string; qtyBox: number }[]>([]);
   const [done, setDone] = useState<{ trackingId: string; estimateTotal: number } | null>(null);
   const [placing, setPlacing] = useState(false);
@@ -43,9 +44,19 @@ export default function Shop() {
 
   const filtered = useMemo(() => {
     if (!prices) return [];
-    const s = search.toLowerCase();
-    return (prices as any[]).filter((p: any) => p.productName.toLowerCase().includes(s)).slice(0, 40);
-  }, [prices, search]);
+    const s = search.trim().toLowerCase();
+    const num = Number(s);
+    const isNum = s !== "" && !Number.isNaN(num);
+    let rows = (prices as any[]).filter((p: any) => {
+      if (!s) return true;
+      if (isNum) return String(p.price).includes(s) || p.price === num;
+      return p.productName.toLowerCase().includes(s) || String(p.price).includes(s);
+    });
+    if (sort === "low") rows = [...rows].sort((a, b) => a.price - b.price);
+    else if (sort === "high") rows = [...rows].sort((a, b) => b.price - a.price);
+    else rows = [...rows].sort((a, b) => String(a.productName).localeCompare(String(b.productName)));
+    return rows.slice(0, 60);
+  }, [prices, search, sort]);
 
   const priceMap = useMemo(() => new Map(((prices ?? []) as any[]).map((p: any) => [p.productName, p.price])), [prices]);
   const est = cart.reduce((s, c) => s + (Number(priceMap.get(c.productName)) || 0) * c.qtyBox, 0);
@@ -138,13 +149,13 @@ export default function Shop() {
               <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent dark:from-[#1a1016] dark:via-transparent" />
               <div className="anim-floaty absolute bottom-5 left-5 right-5 glass rounded-2xl p-3 text-xs">
                 <p className="font-display font-bold tracking-widest text-red-900 dark:text-amber-200">TODAY&apos;S CROWD FAVORITES 🥓</p>
-                <p className="mt-1 text-slate-600 dark:text-slate-300">Belly Biso Scan ₱245 • CLQ Pilgrims ₱151 • Wings Aurora ₱200</p>
+                <p className="mt-1 text-slate-600 dark:text-slate-300">Belly Biso Scan ₱245 • CLQ Pilgrims ₱151 • Wings Aurora ₱200 — see notes for availability</p>
               </div>
             </div>
           </div>
         </div>
         <div className="anim-fade-up mt-3 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-50/90 to-orange-50/80 dark:from-amber-950/60 dark:to-red-950/40 px-4 py-2.5 text-xs text-amber-950 dark:text-amber-100 backdrop-blur" style={{ animationDelay: "0.15s" }}>
-          <b>⚠ Disclaimer:</b> Prices are estimates only from the latest update — final payable after biller confirms availability. Items marked * are parating pa lang.
+          <b>⚠ Disclaimer:</b> Prices are estimates only from the latest update — final payable after biller confirms availability. Check notes on each item for availability.
         </div>
       </section>
 
@@ -165,13 +176,21 @@ export default function Shop() {
           </div>
 
           <h2 className="font-display mt-6 text-lg font-bold tracking-wide">2 • Pick items 🧊</h2>
-          <input className="mt-2 w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-400" placeholder="🔍 Search e.g. Belly, CLQ, Wings, Mask..." value={search} onChange={(e) => setSearch(e.target.value)} />
+          <div className="mt-2 flex gap-2">
+            <input className="flex-1 rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-sky-400" placeholder="🔍 Search name or price — e.g. Belly, CLQ, or 245..." value={search} onChange={(e) => setSearch(e.target.value)} />
+            <select value={sort} onChange={(e) => setSort(e.target.value as any)} title="Sort"
+              className="rounded-xl border border-slate-200 dark:border-white/10 px-2 py-2.5 text-sm font-semibold outline-none">
+              <option value="name">A–Z</option>
+              <option value="low">₱ Low→High</option>
+              <option value="high">₱ High→Low</option>
+            </select>
+          </div>
           <div className="mt-2 max-h-64 overflow-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 divide-y divide-slate-100 dark:divide-white/5">
             {filtered.map((p: any) => (
               <div key={p.productName} className="group flex items-center gap-2 px-3 py-2 text-sm transition hover:bg-red-50/70 dark:hover:bg-white/5">
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium">{p.productName}</p>
-                  <p className="font-mono text-xs text-red-800 dark:text-amber-200">₱{p.price} / box</p>
+                  <p className="font-mono text-xs text-red-800 dark:text-amber-200">₱{p.price} / box{p.notes ? ` • ${p.notes}` : ""}</p>
                 </div>
                 <button onClick={() => setCart([...cart, { productName: p.productName, qtyBox: 1 }])}
                   className="rounded-full bg-gradient-to-r from-red-900 to-red-600 px-3 py-1 text-xs font-semibold text-white opacity-80 transition group-hover:opacity-100 hover:scale-105">+ Add</button>
