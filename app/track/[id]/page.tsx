@@ -86,7 +86,10 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
             {order.fulfillment === "pickup" ? (
               <p>PICKUP — {String(order.branch).toUpperCase()} BRANCH</p>
             ) : (
-              <p>DELIVERY ADDRESS:<br /><b>{String((order as any).address ?? "")}</b></p>
+              <div>
+                <p>DELIVERY ADDRESS:</p>
+                <p><b>{String((order as any).address ?? "")}</b></p>
+              </div>
             )}
             <p>Status: <b>{order.status}</b> • Payable: <b>₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b></p>
             <p className="mt-1 break-all">Track anytime: <span className="font-mono">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}</span></p>

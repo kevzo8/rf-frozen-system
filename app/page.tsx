@@ -408,8 +408,8 @@ export default function Shop() {
                 <TriangleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
                 <span>Please double-check your name, mobile, branch, pickup/delivery, and tray units before placing the order.</span>
               </p>
-              <div className="mt-2 rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 p-3 text-sm" aria-live="polite">
-                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Receipt preview — this is how it will print</p>
+              <div className="mt-2 rounded-2xl border border-slate-300 dark:border-white/20 bg-white/70 dark:bg-black/30 p-3 text-sm" aria-live="polite">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">Receipt preview — this is how it will print</p>
                 <div className="mt-1 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-900">
                   <p className="font-black">RF FROZEN MEAT CORP — {branch.toUpperCase()}</p>
                   <p>CONTACT NAME: <b>{(name.trim() || "YOUR NAME").toUpperCase()}</b></p>
@@ -418,7 +418,10 @@ export default function Shop() {
                   {fulfillment === "pickup" ? (
                     <p>PICKUP — {BRANCHES.find((b) => b.id === branch)?.label} branch</p>
                   ) : (
-                    <p>DELIVERY ADDRESS:<br /><b>{address.trim() || "(address)"}</b></p>
+                    <div className="mt-0.5">
+                      <p>DELIVERY ADDRESS:</p>
+                      <p><b>{address.trim() || "(address)"}</b></p>
+                    </div>
                   )}
                   {cart.length > 0 ? (
                     <ul className="mt-1 list-disc pl-5">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
