@@ -432,7 +432,6 @@ export default function Shop() {
                     <button type="button" onClick={() => setDone(null)} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base">New order</button>
                   </div>
                   {copied && <p role="status" className="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300"><CircleCheck size={16} aria-hidden /> Tracking number copied!</p>}
-                  </div>
                 </div>
               )}
             </div>
