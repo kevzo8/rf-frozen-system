@@ -113,7 +113,7 @@ function OrdersBoardInner() {
               <button onClick={() => setSel(null)} className="min-h-[44px] w-full rounded-xl border py-2 text-sm">Clear selection</button>
             </div>
           )}
-          <details className="mt-3 rounded-xl border border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2">
+          <details open className="mt-3 rounded-xl border border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2">
             <summary className="cursor-pointer min-h-[44px] text-sm font-bold">Where does this order go next?</summary>
             <div className="mt-2"><LifecycleGuide current={sel?.status} /></div>
           </details>
