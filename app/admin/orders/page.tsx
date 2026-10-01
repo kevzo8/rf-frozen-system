@@ -5,7 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Check, ReceiptText, ArrowRight, ClipboardList, Wallet } from "lucide-react";
+import { Check, ReceiptText, ArrowRight, ClipboardList, Wallet, Upload } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
 import { Suspense } from "react";
@@ -33,6 +33,27 @@ function OrdersBoardInner() {
   const orders = useQuery((api as any)?.orders?.listOrders, token ? { token, status } : "skip");
   const doSetFinal = useMutation((api as any)?.orders?.setFinal);
   const doSetStatus = useMutation((api as any)?.orders?.setStatus);
+  const getUrl = useMutation((api as any)?.proofStorage?.uploadUrl);
+  const linkProof = useMutation((api as any)?.orders?.linkProof);
+  const [proofBusy, setProofBusy] = useState(false);
+  const [proofMsg, setProofMsg] = useState("");
+
+  async function uploadProofForCustomer(file: File | undefined) {
+    if (!file || !sel || !token) return;
+    setProofBusy(true);
+    setProofMsg("");
+    try {
+      const url = await (getUrl as any)({});
+      const res = await fetch(url, { method: "POST", headers: { "Content-Type": file.type || "image/jpeg" }, body: file });
+      const { storageId } = await res.json();
+      await (linkProof as any)({ trackingId: sel.trackingId, fileId: storageId, fileName: file.name, mode, amount: Number(final) || sel.finalTotal || sel.estimateTotal });
+      setProofMsg("Proof uploaded for customer — verify it above.");
+    } catch (err: any) {
+      setProofMsg(err?.message ?? "Upload failed");
+    } finally {
+      setProofBusy(false);
+    }
+  }
 
   if (!token) return <main className="p-8 text-sm">Loading...</main>;
 
@@ -110,6 +131,13 @@ function OrdersBoardInner() {
               <label className="block text-sm font-semibold">OS No.<input value={os} onChange={(e) => setOs(e.target.value)} placeholder="RF55xxx" className="mt-1 min-h-[48px] w-full rounded-xl border px-2 py-1.5 text-base" /></label>
               <label className="block text-sm font-semibold">Invoice No.<input value={inv} onChange={(e) => setInv(e.target.value)} placeholder="238xxx" className="mt-1 min-h-[48px] w-full rounded-xl border px-2 py-1.5 text-base" /></label>
               <button onClick={saveFinal} className="min-h-[48px] w-full rounded-xl bg-gradient-to-r from-red-900 to-red-600 py-2.5 text-base text-white font-bold">Save final bill → customer sees “To pay”</button>
+              <div className="rounded-xl border border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2.5">
+                <p className="flex items-center gap-1.5 text-sm font-bold"><Upload size={16} aria-hidden /> Upload proof for customer</p>
+                <p className="text-xs opacity-70">Customer sent it via Messenger/text? Attach it here — same as their upload.</p>
+                <input type="file" accept="image/*" aria-label="Proof of payment file" onChange={(e) => uploadProofForCustomer(e.target.files?.[0])} className="mt-1.5 w-full text-sm" />
+                {proofBusy && <p className="text-sm">Uploading...</p>}
+                {proofMsg && <p className="text-sm font-semibold" role="status">{proofMsg}</p>}
+              </div>
               <button onClick={() => setSel(null)} className="min-h-[44px] w-full rounded-xl border py-2 text-sm">Clear selection</button>
             </div>
           )}
