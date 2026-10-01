@@ -112,7 +112,7 @@ function ReportsInner() {
         )}
         {tab === "receipt" && receipts && (
           <div className="space-y-2">{(receipts as any[]).map((r: any) => (
-            <div key={r.trackingId} className="glass rounded-2xl p-3"><p className="font-mono text-xs">{r.trackingId} • OS {r.os} • INV {r.inv}</p>
+            <div key={r.trackingId} className="glass rounded-2xl p-3"><p className="font-mono text-xs"><a href={`/track/${r.trackingId}`} className="underline">{r.trackingId}</a> • OS {r.os} • INV {r.inv} • [{r.status}]</p>
               <p className="font-semibold">{r.customer} — ₱{r.total.toLocaleString()} [{r.status}]</p>
               <p className="text-xs">{r.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
             </div>))}

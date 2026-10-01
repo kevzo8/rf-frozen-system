@@ -3,7 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { use, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Printer, Upload, ReceiptText, Route } from "lucide-react";
+import { Printer, Upload, ReceiptText, Route, Link2 } from "lucide-react";
 import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
 
@@ -79,10 +79,15 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
           <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800">
             <p className="font-black">RF FROZEN MEAT CORP — {order.branch.toUpperCase()}</p>
             <p>OS: {order.osNo ?? "-"} | INV: {order.invoiceNo ?? "-"} | {order.trackingId}</p>
+            <p>Status: <b>{order.status}</b> • Payable: <b>₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b></p>
+            <p className="mt-1 break-all">Track anytime: <span className="font-mono">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}</span></p>
             <ul className="mt-1">{order.items.map((it: any, i: number) => <li key={i}>{it.productName} × {it.qtyBox} @ ₱{it.estPrice}</li>)}</ul>
             <p className="mt-1 text-[11px] text-slate-500">THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES</p>
           </div>
-          <button onClick={() => window.print()} className="mt-2 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print receipt</button>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <button onClick={() => window.print()} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print receipt</button>
+            <button onClick={() => { const link = `${window.location.origin}/track/${order.trackingId}`; navigator.clipboard?.writeText(link); alert("Tracking link copied: " + link); }} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border px-5 py-2.5 text-base font-semibold"><Link2 size={18} aria-hidden /> Copy tracking link</button>
+          </div>
         </div>
         <div className="glass rounded-3xl p-6">
           <h2 className="font-bold text-slate-900">Upload proof of payment</h2>
