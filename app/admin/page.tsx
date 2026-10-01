@@ -137,7 +137,66 @@ export default function AdminHome() {
             </a>
           ))}
         </nav>
+
+        {/* my account - all roles */}
+        <MyAccount token={token} displayName={(me as any)?.displayName ?? ""} username={(me as any)?.username ?? ""} />
       </main>
     </div>
+  );
+}
+
+function MyAccount({ token, displayName, username }: { token: string; displayName: string; username: string }) {
+  const updateMe = useMutation((api as any)?.auth?.updateMe);
+  const [name, setName] = useState(displayName);
+  const [cur, setCur] = useState("");
+  const [next, setNext] = useState("");
+  const [msg, setMsg] = useState("");
+  useEffect(() => { setName(displayName); }, [displayName]);
+
+  async function saveName(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg("");
+    try {
+      await (updateMe as any)({ token, displayName: name });
+      setMsg("Display name updated.");
+    } catch (err: any) {
+      setMsg(err?.message ?? "Failed");
+    }
+  }
+
+  async function savePw(e: React.FormEvent) {
+    e.preventDefault();
+    setMsg("");
+    try {
+      await (updateMe as any)({ token, currentPassword: cur, newPassword: next });
+      setMsg("Password changed.");
+      setCur(""); setNext("");
+    } catch (err: any) {
+      setMsg(err?.message ?? "Failed");
+    }
+  }
+
+  return (
+    <section aria-label="My account" className="glass rounded-3xl p-5">
+      <h2 className="flex items-center gap-2 font-display text-lg font-bold"><Users size={20} aria-hidden /> My account — {username}</h2>
+      <div className="mt-3 grid gap-4 md:grid-cols-2">
+        <form onSubmit={saveName} className="space-y-2">
+          <label className="block text-sm font-semibold">Display name
+            <input value={name} onChange={(e) => setName(e.target.value)} aria-label="Display name" className="mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2 text-base" />
+          </label>
+          <button type="submit" className="min-h-[48px] rounded-xl bg-slate-900 dark:bg-amber-200 dark:text-red-950 px-5 py-2 text-base font-bold text-white">Save name</button>
+        </form>
+        <form onSubmit={savePw} className="space-y-2">
+          <label className="block text-sm font-semibold">Current password
+            <input type="password" value={cur} onChange={(e) => setCur(e.target.value)} aria-label="Current password" className="mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2 text-base" />
+          </label>
+          <label className="block text-sm font-semibold">New password (min 4)
+            <input type="password" value={next} onChange={(e) => setNext(e.target.value)} aria-label="New password" className="mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2 text-base" />
+          </label>
+          <button type="submit" className="min-h-[48px] rounded-xl border px-5 py-2 text-base font-bold">Change password</button>
+        </form>
+      </div>
+      {msg && <p className="mt-2 text-sm font-semibold">{msg}</p>}
+    </section>
   );
 }

@@ -119,3 +119,30 @@ export const listUsers = query({
     return all.map((x) => ({ username: x.username, role: x.role, branch: x.branch, displayName: x.displayName, active: x.active }));
   },
 });
+
+// Self-service: any logged-in staff can update their own display name,
+// and change their own password by proving the current one.
+export const updateMe = mutation({
+  args: { token: v.string(), displayName: v.optional(v.string()), currentPassword: v.optional(v.string()), newPassword: v.optional(v.string()) },
+  handler: async (ctx, args) => {
+    const s = await ctx.db.query("sessions").withIndex("by_token", (q) => q.eq("token", args.token)).unique();
+    if (!s || s.expiresAt < Date.now()) throw new Error("Not logged in");
+    const u = await ctx.db.get(s.userId);
+    if (!u || !u.active) throw new Error("Not logged in");
+    const patch: { displayName?: string; passwordHash?: string } = {};
+    if (args.displayName !== undefined) {
+      const d = args.displayName.trim();
+      if (d.length < 2) throw new Error("Display name too short");
+      patch.displayName = d;
+    }
+    if (args.newPassword !== undefined) {
+      if (!args.currentPassword) throw new Error("Current password required");
+      if (!(await verifyPassword(args.currentPassword, u.passwordHash))) throw new Error("Current password is wrong");
+      if (args.newPassword.length < 4) throw new Error("New password too short (min 4)");
+      patch.passwordHash = await hashPassword(args.newPassword);
+    }
+    if (Object.keys(patch).length === 0) throw new Error("Nothing to update");
+    await ctx.db.patch(u._id, patch);
+    return true;
+  },
+});
