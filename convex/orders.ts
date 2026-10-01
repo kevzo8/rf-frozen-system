@@ -21,8 +21,8 @@ export const placeOrder = mutation({
     const branch = args.branch.trim().toLowerCase();
     const contact = (args.contactName ?? args.customerName).trim().replace(/\s+/g, " ");
     const company = (args.companyName ?? "").trim().replace(/\s+/g, " ");
-    // Receipt name: company if given, else contact person — always ALL CAPS
-    const display = (company || contact || args.customerName).trim().replace(/\s+/g, " ").toUpperCase();
+    // Receipt name: contact person full name, always ALL CAPS (company shown separately)
+    const display = contact.toUpperCase() || args.customerName.trim().replace(/\s+/g, " ").toUpperCase();
     const key = display.toLowerCase();
     if (!contact) throw new Error("Contact person required");
     const mobile = (args.mobile ?? "").trim();

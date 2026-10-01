@@ -80,7 +80,9 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
           <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800">
             <p className="font-black">RF FROZEN MEAT CORP — {order.branch.toUpperCase()}</p>
             <p>OS: {order.osNo ?? "-"} | INV: {order.invoiceNo ?? "-"} | {order.trackingId}</p>
-            <p>RECEIPT NAME: <b>{String(order.customerName).toUpperCase()}</b>{order.contactName ? ` • CONTACT: ${String(order.contactName).toUpperCase()}` : ""} • {order.fulfillment === "pickup" ? "PICKUP" : "DELIVERY"}</p>
+            <p>RECEIPT NAME: <b>{String(order.contactName ?? order.customerName).toUpperCase()}</b></p>
+            {order.companyName && <p>COMPANY: <b>{String(order.companyName).toUpperCase()}</b></p>}
+            <p>MOBILE: {(order as any).mobile ?? "-"} • {order.fulfillment === "pickup" ? "PICKUP" : `DELIVERY — ${(order as any).address ?? ""}`}</p>
             <p>Status: <b>{order.status}</b> • Payable: <b>₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b></p>
             <p className="mt-1 break-all">Track anytime: <span className="font-mono">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}</span></p>
             <ul className="mt-1">{order.items.map((it: any, i: number) => <li key={i}>{it.productName} × {it.qtyBox} @ ₱{it.estPrice}</li>)}</ul>

@@ -291,7 +291,7 @@ export default function Shop() {
                 {savedClients.filter((c) => !name.trim() || c.name.toLowerCase() === name.trim().toLowerCase()).map((c, i) => <option key={`${c.mobile}-${i}`} value={c.mobile}>{c.name}{c.company ? ` • ${c.company}` : ""}</option>)}
               </datalist>
             </label>
-            <label className="sm:col-span-2 text-sm font-semibold">Company name <span className="font-normal opacity-60">(printed on receipt)</span>
+            <label className="sm:col-span-2 text-sm font-semibold">Company name <span className="font-normal opacity-60">(optional)</span>
               <input aria-label="Company name" list="rf-saved-companies" className="mt-1 min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="e.g. Santos Meatshop (optional)" value={company} onChange={(e) => setCompany(e.target.value)} />
               <datalist id="rf-saved-companies">
                 {savedClients.filter((c) => !name.trim() || c.name.toLowerCase() === name.trim().toLowerCase()).map((c, i) => c.company ? <option key={`${c.company}-${i}`} value={c.company}>{c.mobile}</option> : null)}
@@ -404,6 +404,21 @@ export default function Shop() {
                 <TriangleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
                 <span>Please double-check your name, mobile, branch, pickup/delivery, and tray units before placing the order.</span>
               </p>
+              <div className="mt-2 rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 p-3 text-sm" aria-live="polite">
+                <p className="text-xs font-bold uppercase tracking-widest opacity-60">Receipt preview — this is how it will print</p>
+                <div className="mt-1 rounded-xl bg-white/90 dark:bg-black/30 border p-2.5">
+                  <p className="font-black">RF FROZEN MEAT CORP — {branch.toUpperCase()}</p>
+                  <p>RECEIPT NAME: <b>{(name.trim() || "YOUR NAME").toUpperCase()}</b></p>
+                  {company.trim() && <p>COMPANY: <b>{company.trim().toUpperCase()}</b></p>}
+                  <p>MOBILE: {mobile.trim() || "—"} • {fulfillment === "pickup" ? `PICKUP — ${BRANCHES.find((b) => b.id === branch)?.label} branch` : `DELIVERY — ${address.trim() || "(address)"}`}</p>
+                  {cart.length > 0 ? (
+                    <ul className="mt-1">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
+                  ) : (
+                    <p className="opacity-60">No units yet — add items below.</p>
+                  )}
+                  <p className="mt-1 font-bold">ESTIMATE: ₱{est.toLocaleString()}</p>
+                </div>
+              </div>
               <button onClick={submit} aria-disabled={placing}
                 className="mt-3 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 py-3 text-lg font-bold text-red-950 transition hover:scale-[1.01] focus-visible:outline-2">
                 <ShoppingCart size={20} aria-hidden /> {placing ? "Placing..." : "Place order — get tracking number"}
