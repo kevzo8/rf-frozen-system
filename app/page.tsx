@@ -50,12 +50,18 @@ export default function Shop() {
   function rememberClient(trackingId: string, total: number) {
     try {
       const clients = JSON.parse(localStorage.getItem("rf_clients") ?? "[]");
+      // Name is the primary key; each distinct company/mobile/address combo is kept
+      // as an alternative detail record under that name.
+      const norm = (s: string) => s.trim().toLowerCase();
       const entry = { name: name.trim(), company: company.trim(), mobile: mobile.trim(), address: address.trim(), branch };
-      const rest = clients.filter((c: any) => c.name.toLowerCase() !== entry.name.toLowerCase() || c.mobile !== entry.mobile);
-      localStorage.setItem("rf_clients", JSON.stringify([entry, ...rest].slice(0, 20)));
+      const rest = clients.filter((c: any) =>
+        !(norm(c.name) === norm(entry.name) && norm(c.company) === norm(entry.company) && c.mobile === entry.mobile && norm(c.address) === norm(entry.address))
+      );
+      const next = [entry, ...rest].slice(0, 30);
+      localStorage.setItem("rf_clients", JSON.stringify(next));
       const hist = JSON.parse(localStorage.getItem("rf_history") ?? "[]");
       localStorage.setItem("rf_history", JSON.stringify([{ trackingId, total, date: new Date().toISOString().slice(0, 10), branch }, ...hist].slice(0, 20)));
-      setSavedClients([entry, ...rest].slice(0, 20));
+      setSavedClients(next);
     } catch {}
   }
 
@@ -252,36 +258,64 @@ export default function Shop() {
                 {BRANCHES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
               </select>
             </label>
-            {fulfillment === "pickup" ? (
+            {fulfillment === "pickup" && (
               <p className="sm:col-span-2 flex items-start gap-2 rounded-2xl border border-sky-300/50 bg-sky-50/80 dark:bg-cyan-950/30 px-3 py-2.5 text-sm">
                 <Store size={17} aria-hidden className="mt-0.5 shrink-0" />
-                <span>Pickup at <b>RF Frozen Meat Corp — {BRANCHES.find((b) => b.id === branch)?.label} branch</b> (exact address to follow). No delivery address needed.</span>
+                <span>You selected <b>pickup</b>, so you can pick up at the branch — <b>RF Frozen Meat Corp, {BRANCHES.find((b) => b.id === branch)?.label} branch</b> (exact address to follow). Select <b>Delivery</b> as mode of purchase if you want it delivered.</span>
               </p>
-            ) : (
-              <label className="sm:col-span-2 text-sm font-semibold">
-                Delivery address *
-                <input id="order-address" aria-label="Delivery address" aria-invalid={missing === "address"}
-                  className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "address" ? "border-red-500 ring-2 ring-red-300" : "border-slate-200 dark:border-white/10"}`}
-                  placeholder="House / street / barangay / city *" value={address} onChange={(e) => { setAddress(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
-              </label>
             )}
             <label className="text-sm font-semibold">Contact person — full name *
               <input id="order-name" list="rf-saved-names" aria-label="Contact person full name" aria-invalid={missing === "name"}
                 className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "name" ? "border-red-500 ring-2 ring-red-300 bg-red-50/60 dark:bg-red-950/30" : "border-slate-200 dark:border-white/10"}`}
                 placeholder="e.g. Maria Santos *" value={name} onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
               <datalist id="rf-saved-names">
-                {savedClients.map((c, i) => <option key={i} value={c.name}>{c.company ? `${c.company} • ${c.mobile}` : c.mobile}</option>)}
+                {savedClients.map((c, i) => <option key={`${c.name}-${i}`} value={c.name}>{c.company ? `${c.company} • ${c.mobile}` : c.mobile}</option>)}
               </datalist>
             </label>
-            <label className="text-sm font-semibold">Company name <span className="font-normal opacity-60">(printed on receipt)</span>
-              <input aria-label="Company name" className="mt-1 min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="e.g. Santos Meatshop (optional)" value={company} onChange={(e) => setCompany(e.target.value)} />
-            </label>
-            <label className="sm:col-span-2 text-sm font-semibold">Contact mobile number *
-              <input id="order-mobile" aria-label="Contact mobile number" aria-invalid={missing === "mobile"} inputMode="tel"
+            <label className="text-sm font-semibold">Contact mobile number *
+              <input id="order-mobile" list="rf-saved-mobiles" aria-label="Contact mobile number" aria-invalid={missing === "mobile"} inputMode="tel"
                 className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "mobile" ? "border-red-500 ring-2 ring-red-300" : "border-slate-200 dark:border-white/10"}`}
                 placeholder="09xx xxx xxxx *" value={mobile} onChange={(e) => { setMobile(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
+              <datalist id="rf-saved-mobiles">
+                {savedClients.filter((c) => !name.trim() || c.name.toLowerCase() === name.trim().toLowerCase()).map((c, i) => <option key={`${c.mobile}-${i}`} value={c.mobile}>{c.name}{c.company ? ` • ${c.company}` : ""}</option>)}
+              </datalist>
             </label>
+            <label className="sm:col-span-2 text-sm font-semibold">Company name <span className="font-normal opacity-60">(printed on receipt)</span>
+              <input aria-label="Company name" list="rf-saved-companies" className="mt-1 min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="e.g. Santos Meatshop (optional)" value={company} onChange={(e) => setCompany(e.target.value)} />
+              <datalist id="rf-saved-companies">
+                {savedClients.filter((c) => !name.trim() || c.name.toLowerCase() === name.trim().toLowerCase()).map((c, i) => c.company ? <option key={`${c.company}-${i}`} value={c.company}>{c.mobile}</option> : null)}
+              </datalist>
+            </label>
+            {fulfillment === "delivery" && (
+              <label className="sm:col-span-2 text-sm font-semibold">
+                Delivery address *
+                <input id="order-address" list="rf-saved-addresses" aria-label="Delivery address" aria-invalid={missing === "address"}
+                  className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "address" ? "border-red-500 ring-2 ring-red-300" : "border-slate-200 dark:border-white/10"}`}
+                  placeholder="House / street / barangay / city *" value={address} onChange={(e) => { setAddress(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
+                <datalist id="rf-saved-addresses">
+                  {savedClients.filter((c) => !name.trim() || c.name.toLowerCase() === name.trim().toLowerCase()).map((c, i) => c.address ? <option key={`${c.address}-${i}`} value={c.address} /> : null)}
+                </datalist>
+              </label>
+            )}
           </div>
+          {(() => {
+            const key = name.trim().toLowerCase();
+            const alts = key ? savedClients.filter((c) => c.name.toLowerCase() === key && (c.company !== company.trim() || c.mobile !== mobile.trim() || c.address !== address.trim())) : [];
+            if (alts.length === 0) return null;
+            return (
+              <div className="mt-2 rounded-2xl border border-white/50 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2.5" aria-live="polite">
+                <p className="text-sm font-bold">We know {name.trim()} — tap a past detail to reuse it:</p>
+                <div className="mt-1.5 space-y-1.5">
+                  {alts.slice(0, 4).map((c, i) => (
+                    <button key={i} type="button" onClick={() => { setCompany(c.company); setMobile(c.mobile); setAddress(c.address); setBranch(c.branch); setMissing(null); }}
+                      className="block w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2 text-left text-sm hover:bg-red-50/60 dark:hover:bg-white/5 min-h-[44px]">
+                      <span className="font-semibold">{c.company || "(no company)"}</span> • {c.mobile}{c.address ? ` • ${c.address}` : ""}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
           {missing === "name" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Please enter the contact person&apos;s name.</p>}
           {missing === "mobile" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Mobile number is required so the branch can contact you.</p>}
           {missing === "address" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Delivery needs an address — or switch to Pickup.</p>}
