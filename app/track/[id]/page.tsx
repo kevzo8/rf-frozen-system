@@ -4,6 +4,7 @@ import { api } from "../../../convex/_generated/api";
 import { use, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Printer, Upload, ReceiptText } from "lucide-react";
+import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 const STEPS = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -36,7 +37,24 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
     }
   }
 
-  if (!order) return <main className="min-h-screen flex items-center justify-center text-sm text-slate-600">Loading {id}...</main>;
+  if (!order) return (
+    <div className="min-h-screen font-body">
+      <header className="glass sticky top-0 z-20 border-b border-white/60">
+        <div className="mx-auto max-w-3xl px-5 py-3 flex items-center gap-3">
+          <Skeleton className="h-10 w-10 !rounded-full" />
+          <Skeleton className="h-5 w-40" />
+        </div>
+      </header>
+      <main className="mx-auto max-w-3xl px-5 py-6 space-y-4">
+        <div className="glass-strong rounded-3xl p-6 space-y-2">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-7 w-64" />
+          <Skeleton className="h-5 w-full" />
+        </div>
+        <SkeletonLines rows={4} />
+      </main>
+    </div>
+  );
 
   return (
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">

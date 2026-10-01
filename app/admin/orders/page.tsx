@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Check, ReceiptText, ArrowRight, ClipboardList } from "lucide-react";
+import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 const FLOW = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -59,7 +60,11 @@ export default function OrdersBoard() {
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-5 grid lg:grid-cols-[1.5fr_1fr] gap-4 text-base">
-        <div className="space-y-2">
+        <div className="space-y-2" aria-live="polite">
+          {orders === undefined ? (
+            <SkeletonLines rows={5} />
+          ) : (
+          <>
           {(orders ?? []).map((o: any) => (
             <div key={o.trackingId} className={`glass rounded-2xl p-3 text-sm ${sel?.trackingId === o.trackingId ? "ring-2 ring-red-400" : ""}`}>
               <div className="flex items-center gap-2">
@@ -80,7 +85,9 @@ export default function OrdersBoard() {
               </div>
             </div>
           ))}
-          {(!orders || orders.length === 0) && <p className="text-sm opacity-60">No orders for this filter. Place a test order in the shop.</p>}
+          {orders !== undefined && orders.length === 0 && <p className="text-base opacity-60">No orders for this filter. Place a test order in the shop.</p>}
+          </>
+          )}
         </div>
         <div className="glass rounded-2xl p-4 h-fit lg:sticky lg:top-20 text-sm">
           <h2 className="font-display font-bold">Bill / set final</h2>

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Download, ChartBar } from "lucide-react";
+import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
@@ -82,7 +83,11 @@ export default function Reports() {
           ))}
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-5 py-4 text-sm">
+      <main className="mx-auto max-w-6xl px-5 py-4 text-base" aria-live="polite">
+        {(tab === "cash" && cash === undefined) || (tab === "sales" && sales === undefined) || (tab === "credit" && credit === undefined) || (tab === "receipt" && receipts === undefined) ? (
+          <div className="glass rounded-2xl p-4"><SkeletonLines rows={6} /></div>
+        ) : (
+        <>
         {tab === "cash" && cash && (
           <div className="glass rounded-2xl overflow-auto"><table className="w-full">
             <thead><tr className="text-left text-xs opacity-60"><th className="p-2">OR#</th><th className="p-2">NAME</th><th className="p-2">BILL</th><th className="p-2">CASH</th><th className="p-2">GCASH</th><th className="p-2">BANK</th><th className="p-2">TRACKING</th></tr></thead>
@@ -110,6 +115,8 @@ export default function Reports() {
               <p className="text-xs">{r.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
             </div>))}
           </div>
+        )}
+        </>
         )}
       </main>
     </div>

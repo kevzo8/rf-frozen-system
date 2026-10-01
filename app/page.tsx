@@ -7,6 +7,7 @@ import {
   Snowflake, ShoppingCart, Search, Plus, X, ReceiptText, PackageSearch,
   Store, Tag, TriangleAlert, ArrowRight, CircleCheck, Info, ClipboardList,
 } from "lucide-react";
+import { SkeletonLines } from "../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -189,18 +190,24 @@ export default function Shop() {
               <option value="high">₱ High→Low</option>
             </select>
           </div>
-          <div className="mt-2 max-h-72 overflow-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 divide-y divide-slate-100 dark:divide-white/5">
-            {filtered.map((p: any) => (
-              <div key={p.productName} className="group flex items-center gap-2 px-3 py-2.5 text-base transition hover:bg-red-50/70 dark:hover:bg-white/5">
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium">{p.productName}</p>
-                  <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / box{p.notes ? ` • ${p.notes}` : ""}</p>
-                </div>
-                <button onClick={() => setCart([...cart, { productName: p.productName, qtyBox: 1 }])} aria-label={`Add ${p.productName}`}
-                  className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full bg-gradient-to-r from-red-900 to-red-600 px-3 py-2 text-base font-semibold text-white transition hover:scale-105 focus-visible:outline-2"><Plus size={17} aria-hidden /> Add</button>
-              </div>
-            ))}
-            {filtered.length === 0 && <p className="p-3 text-sm opacity-60">Type to search price list...</p>}
+          <div className="mt-2 max-h-72 overflow-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 divide-y divide-slate-100 dark:divide-white/5" aria-live="polite">
+            {prices === undefined ? (
+              <div className="p-3"><SkeletonLines rows={4} /></div>
+            ) : (
+              <>
+                {filtered.map((p: any) => (
+                  <div key={p.productName} className="group flex items-center gap-2 px-3 py-2.5 text-base transition hover:bg-red-50/70 dark:hover:bg-white/5">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">{p.productName}</p>
+                      <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / box{p.notes ? ` • ${p.notes}` : ""}</p>
+                    </div>
+                    <button onClick={() => setCart([...cart, { productName: p.productName, qtyBox: 1 }])} aria-label={`Add ${p.productName}`}
+                      className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full bg-gradient-to-r from-red-900 to-red-600 px-3 py-2 text-base font-semibold text-white transition hover:scale-105 focus-visible:outline-2"><Plus size={17} aria-hidden /> Add</button>
+                  </div>
+                ))}
+                {filtered.length === 0 && <p className="p-3 text-sm opacity-60">Type to search price list...</p>}
+              </>
+            )}
           </div>
 
           <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 p-[1px]">

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Users, UserPlus, ShieldCheck, Store } from "lucide-react";
+import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
@@ -73,8 +74,11 @@ export default function UsersPage() {
           </form>
           <p className="mt-2 flex gap-1.5 text-sm opacity-70"><ShieldCheck size={16} aria-hidden /> Admins see all branches. Billers/inventory are scoped to their branch.</p>
         </section>
-        <section className="glass rounded-3xl p-5">
+        <section className="glass rounded-3xl p-5" aria-live="polite">
           <h2 className="flex items-center gap-2 font-bold"><Store size={18} aria-hidden /> All staff ({(users ?? []).length})</h2>
+          {users === undefined ? (
+            <div className="mt-2"><SkeletonLines rows={4} /></div>
+          ) : (
           <ul className="mt-2 space-y-2">
             {(users ?? []).map((u: any) => (
               <li key={u.username} className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/40 dark:border-white/10 bg-white/60 dark:bg-black/20 px-3 py-2.5">
@@ -87,6 +91,7 @@ export default function UsersPage() {
               </li>
             ))}
           </ul>
+          )}
         </section>
       </main>
     </div>

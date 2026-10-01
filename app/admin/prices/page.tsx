@@ -5,6 +5,8 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
+import { Tag, Download, Upload, Pencil } from "lucide-react";
+import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -82,8 +84,11 @@ export default function PricesManager() {
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or price..." className="flex-1 rounded-xl border px-3 py-2" />
           <label className="rounded-xl border px-3 py-2 cursor-pointer">Import xlsx (A=name B=price C=notes)<input type="file" accept=".xlsx" className="hidden" onChange={onFile} /></label>
         </div>
-        <div className="mt-3 glass rounded-2xl overflow-auto">
-          <table className="w-full text-sm">
+        <div className="mt-3 glass rounded-2xl overflow-auto" aria-live="polite">
+          {prices === undefined ? (
+            <div className="p-4"><SkeletonLines rows={6} /></div>
+          ) : (
+          <table className="w-full text-base">
             <thead><tr className="text-left text-xs opacity-60"><th className="p-2">Name</th><th className="p-2">Price</th><th className="p-2">Notes</th><th className="p-2">Updated</th><th className="p-2"></th></tr></thead>
             <tbody>
               {rows.map((p: any) => (
@@ -97,6 +102,7 @@ export default function PricesManager() {
               ))}
             </tbody>
           </table>
+          )}
         </div>
         {edit && (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">

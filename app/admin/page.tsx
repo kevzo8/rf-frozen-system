@@ -9,6 +9,7 @@ import {
   ClipboardList, Tag, ChartBar, FolderOpen, Users, LogOut,
   Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp,
 } from "lucide-react";
+import { Skeleton, SkeletonCards } from "../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 
@@ -64,6 +65,9 @@ export default function AdminHome() {
 
       <main className="mx-auto max-w-6xl px-5 py-5 space-y-4">
         {/* today at a glance */}
+        {dash === undefined ? (
+          <SkeletonCards count={4} />
+        ) : (
         <section aria-label="Today at a glance" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
           {[
             { icon: ClipboardList, label: "Orders today", value: (dash as any)?.totalToday ?? "…", sub: `${(dash as any)?.pending ?? 0} need confirm` },
@@ -79,6 +83,7 @@ export default function AdminHome() {
             </div>
           ))}
         </section>
+        )}
 
         {/* revenue by branch bar viz */}
         <section aria-label="Revenue by branch" className="glass rounded-3xl p-5">

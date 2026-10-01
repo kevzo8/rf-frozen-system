@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Check, FolderOpen, Download, Trash2 } from "lucide-react";
+import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
@@ -76,14 +77,21 @@ export default function StorageManager() {
           <button onClick={purge} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border border-red-400 text-red-700 px-5 py-2.5 text-base font-semibold"><Trash2 size={18} aria-hidden /> Purge after export</button>
           <span className="text-xs opacity-60">{(proofs ?? []).length} proofs • purge blocked until exported</span>
         </div>
-        <div className="mt-3 grid sm:grid-cols-3 gap-2">
+        <div className="mt-3 grid sm:grid-cols-3 gap-2" aria-live="polite">
+          {proofs === undefined ? (
+            <div className="sm:col-span-3 glass rounded-2xl p-4"><SkeletonLines rows={3} /></div>
+          ) : (
+          <>
           {((proofs ?? []) as any[]).map((p: any) => (
-            <div key={p._id} className="glass rounded-2xl p-2 text-xs">
+            <div key={p._id} className="glass rounded-2xl p-2 text-sm">
               {p.url ? <img src={p.url} alt="" className="h-32 w-full object-cover rounded-xl" /> : <div className="h-32 rounded-xl bg-black/10" />}
-              <p className="mt-1 font-mono">{p.trackingId}</p>
+              <p className="mt-1 font-mono text-xs">{p.trackingId}</p>
               <p className="flex items-center gap-1">₱{p.amount ?? "-"} • {p.mode ?? "-"} • {p.exportedAt ? <span className="inline-flex items-center gap-1 text-emerald-700"><Check size={15} aria-hidden /> exported</span> : "not exported"}</p>
             </div>
           ))}
+          {(proofs as any[]).length === 0 && <p className="sm:col-span-3 text-base opacity-60">No proofs for this day/branch.</p>}
+          </>
+          )}
         </div>
       </main>
     </div>
