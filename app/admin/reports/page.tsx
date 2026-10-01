@@ -5,6 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
+import { Download, ChartBar } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
@@ -66,18 +67,18 @@ export default function Reports() {
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
       <header className="glass sticky top-0 z-20 border-b">
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2 flex-wrap">
-          <a href="/admin" className="glass rounded-full px-3 py-1 text-sm">← Admin</a>
-          <h1 className="font-display font-bold">Reports — cash / credit / sales / receipt</h1>
-          <div className="ml-auto flex gap-2 items-center">
-            <select value={branch} onChange={(e) => setBranch(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm">{BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}</select>
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm" />
-            <button onClick={exportXlsx} className="rounded-xl bg-slate-900 text-white px-3 py-1.5 text-sm font-bold">Export xlsx</button>
+          <a href="/admin" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base">← Admin</a>
+          <h1 className="flex items-center gap-2 font-display text-lg font-bold"><ChartBar size={20} aria-hidden /> Reports — cash / credit / sales / receipt</h1>
+          <div className="ml-auto flex gap-2 items-center flex-wrap">
+            <select value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch" className="min-h-[44px] rounded-xl border px-2 py-1.5 text-base">{BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}</select>
+            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" className="min-h-[44px] rounded-xl border px-2 py-1.5 text-base" />
+            <button onClick={exportXlsx} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-slate-900 text-white px-4 py-2 text-base font-bold"><Download size={17} aria-hidden /> Export xlsx</button>
             <ThemeToggle />
           </div>
         </div>
-        <div className="mx-auto max-w-6xl px-5 pb-2 flex gap-1.5">
+        <div className="mx-auto max-w-6xl px-5 pb-3 flex gap-2" role="tablist" aria-label="Report type">
           {(["cash", "sales", "credit", "receipt"] as const).map((t) => (
-            <button key={t} onClick={() => setTab(t)} className={`rounded-full px-3 py-1 text-xs font-bold ${tab === t ? "bg-slate-900 text-white" : "glass"}`}>{t}</button>
+            <button key={t} role="tab" aria-selected={tab === t} onClick={() => setTab(t)} className={`min-h-[48px] rounded-full px-5 py-2 text-base font-bold capitalize focus-visible:outline-2 ${tab === t ? "bg-slate-900 text-white dark:bg-amber-200 dark:text-red-950" : "glass"}`}>{t}</button>
           ))}
         </div>
       </header>

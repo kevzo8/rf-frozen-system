@@ -5,6 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
+import { Check, FolderOpen, Download, Trash2 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
@@ -62,8 +63,8 @@ export default function StorageManager() {
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
       <header className="glass sticky top-0 z-20 border-b">
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2">
-          <a href="/admin" className="glass rounded-full px-3 py-1 text-sm">← Admin</a>
-          <h1 className="font-display font-bold">Storage — export then purge</h1>
+          <a href="/admin" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base">← Admin</a>
+          <h1 className="flex items-center gap-2 font-display text-lg font-bold"><FolderOpen size={20} aria-hidden /> Storage — export then purge</h1>
           <div className="ml-auto"><ThemeToggle /></div>
         </div>
       </header>
@@ -71,8 +72,8 @@ export default function StorageManager() {
         <div className="glass rounded-2xl p-4 flex flex-wrap gap-2 text-sm items-center">
           <select value={branch} onChange={(e) => setBranch(e.target.value)} className="rounded-xl border px-2 py-1.5">{BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}</select>
           <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="rounded-xl border px-2 py-1.5" />
-          <button onClick={exportDay} className="rounded-xl bg-slate-900 text-white px-4 py-1.5 font-bold">Export day (.zip + manifest.xlsx)</button>
-          <button onClick={purge} className="rounded-xl border border-red-400 text-red-700 px-4 py-1.5">Purge after export</button>
+          <button onClick={exportDay} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 text-white px-5 py-2.5 text-base font-bold"><Download size={18} aria-hidden /> Export day (.zip + manifest.xlsx)</button>
+          <button onClick={purge} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border border-red-400 text-red-700 px-5 py-2.5 text-base font-semibold"><Trash2 size={18} aria-hidden /> Purge after export</button>
           <span className="text-xs opacity-60">{(proofs ?? []).length} proofs • purge blocked until exported</span>
         </div>
         <div className="mt-3 grid sm:grid-cols-3 gap-2">
@@ -80,7 +81,7 @@ export default function StorageManager() {
             <div key={p._id} className="glass rounded-2xl p-2 text-xs">
               {p.url ? <img src={p.url} alt="" className="h-32 w-full object-cover rounded-xl" /> : <div className="h-32 rounded-xl bg-black/10" />}
               <p className="mt-1 font-mono">{p.trackingId}</p>
-              <p>₱{p.amount ?? "-"} • {p.mode ?? "-"} • {p.exportedAt ? "exported ✓" : "not exported"}</p>
+              <p className="flex items-center gap-1">₱{p.amount ?? "-"} • {p.mode ?? "-"} • {p.exportedAt ? <span className="inline-flex items-center gap-1 text-emerald-700"><Check size={15} aria-hidden /> exported</span> : "not exported"}</p>
             </div>
           ))}
         </div>

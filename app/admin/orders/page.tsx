@@ -5,6 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
+import { Check, ReceiptText, ArrowRight, ClipboardList } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 const FLOW = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -47,17 +48,17 @@ export default function OrdersBoard() {
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
       <header className="glass sticky top-0 z-20 border-b">
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2">
-          <a href="/admin" className="glass rounded-full px-3 py-1 text-sm">← Admin</a>
-          <h1 className="font-display font-bold">Orders board</h1>
+          <a href="/admin" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base">← Admin</a>
+          <h1 className="flex items-center gap-2 font-display text-lg font-bold"><ClipboardList size={20} aria-hidden /> Orders board</h1>
           <div className="ml-auto flex gap-2 items-center">
-            <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm">
+            <select value={status} onChange={(e) => setStatus(e.target.value)} aria-label="Filter by status" className="min-h-[44px] rounded-xl border px-2 py-1.5 text-base">
               {["all", ...FLOW, "cancelled", "returned"].map((s) => <option key={s} value={s}>{s}</option>)}
             </select>
             <ThemeToggle />
           </div>
         </div>
       </header>
-      <main className="mx-auto max-w-6xl px-5 py-5 grid lg:grid-cols-[1.5fr_1fr] gap-4">
+      <main className="mx-auto max-w-6xl px-5 py-5 grid lg:grid-cols-[1.5fr_1fr] gap-4 text-base">
         <div className="space-y-2">
           {(orders ?? []).map((o: any) => (
             <div key={o.trackingId} className={`glass rounded-2xl p-3 text-sm ${sel?.trackingId === o.trackingId ? "ring-2 ring-red-400" : ""}`}>
@@ -67,15 +68,15 @@ export default function OrdersBoard() {
               </div>
               <p className="font-semibold">{o.customerName} • {o.branch} • ₱{(o.finalTotal ?? o.estimateTotal).toLocaleString()}</p>
               <p className="text-xs opacity-70">{o.items.map((i: any) => `${i.productName}×${i.qtyBox}`).join(", ")}</p>
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                <button onClick={() => { setSel(o); setFinal(String(o.finalTotal ?? o.estimateTotal)); setMode(o.paymentMode ?? "GCASH"); setOs(o.osNo ?? ""); setInv(o.invoiceNo ?? ""); }} className="rounded-lg bg-slate-900 text-white px-2.5 py-1 text-xs">Set final / bill</button>
-                {o.status === "placed" && <button onClick={() => confirm(o.trackingId)} className="rounded-lg border px-2.5 py-1 text-xs">Confirm ✓</button>}
-                {o.status === "proof_uploaded" && <button onClick={() => advance(o.trackingId, "payment_verified")} className="rounded-lg bg-emerald-600 text-white px-2.5 py-1 text-xs">Verify payment ✓</button>}
-                {(o.status === "payment_verified" || o.status === "confirmed") && <button onClick={() => advance(o.trackingId, "picking")} className="rounded-lg border px-2.5 py-1 text-xs">→ Picking</button>}
-                {o.status === "picking" && <button onClick={() => advance(o.trackingId, "checking")} className="rounded-lg border px-2.5 py-1 text-xs">→ Checking</button>}
-                {o.status === "checking" && <button onClick={() => advance(o.trackingId, "dispatched")} className="rounded-lg border px-2.5 py-1 text-xs">→ Dispatched</button>}
-                {o.status === "dispatched" && <button onClick={() => advance(o.trackingId, "delivered")} className="rounded-lg bg-emerald-600 text-white px-2.5 py-1 text-xs">Delivered ✓</button>}
-                <a href={`/track/${o.trackingId}`} className="rounded-lg border px-2.5 py-1 text-xs underline">Receipt</a>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button onClick={() => { setSel(o); setFinal(String(o.finalTotal ?? o.estimateTotal)); setMode(o.paymentMode ?? "GCASH"); setOs(o.osNo ?? ""); setInv(o.invoiceNo ?? ""); }} className="inline-flex min-h-[44px] items-center rounded-xl bg-slate-900 text-white px-4 py-2 text-base font-semibold">Set final / bill</button>
+                {o.status === "placed" && <button onClick={() => confirm(o.trackingId)} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base font-semibold"><Check size={17} aria-hidden /> Confirm</button>}
+                {o.status === "proof_uploaded" && <button onClick={() => advance(o.trackingId, "payment_verified")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-emerald-600 text-white px-4 py-2 text-base font-semibold"><Check size={17} aria-hidden /> Verify payment</button>}
+                {(o.status === "payment_verified" || o.status === "confirmed") && <button onClick={() => advance(o.trackingId, "picking")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base font-semibold">Picking <ArrowRight size={16} aria-hidden /></button>}
+                {o.status === "picking" && <button onClick={() => advance(o.trackingId, "checking")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base font-semibold">Checking <ArrowRight size={16} aria-hidden /></button>}
+                {o.status === "checking" && <button onClick={() => advance(o.trackingId, "dispatched")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base font-semibold">Dispatched <ArrowRight size={16} aria-hidden /></button>}
+                {o.status === "dispatched" && <button onClick={() => advance(o.trackingId, "delivered")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-emerald-600 text-white px-4 py-2 text-base font-semibold"><Check size={17} aria-hidden /> Delivered</button>}
+                <a href={`/track/${o.trackingId}`} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base underline"><ReceiptText size={17} aria-hidden /> Receipt</a>
               </div>
             </div>
           ))}

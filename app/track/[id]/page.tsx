@@ -3,6 +3,7 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { use, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
+import { Printer, Upload, ReceiptText } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 const STEPS = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -59,14 +60,14 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
           </div>
         </div>
         <div className="glass rounded-3xl p-6">
-          <h2 className="font-bold text-slate-900">Receipt — print / screenshot this</h2>
+          <h2 className="flex items-center gap-2 font-bold"><ReceiptText size={18} aria-hidden /> Receipt — print / screenshot this</h2>
           <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800">
             <p className="font-black">RF FROZEN MEAT CORP — {order.branch.toUpperCase()}</p>
             <p>OS: {order.osNo ?? "-"} | INV: {order.invoiceNo ?? "-"} | {order.trackingId}</p>
             <ul className="mt-1">{order.items.map((it: any, i: number) => <li key={i}>{it.productName} × {it.qtyBox} @ ₱{it.estPrice}</li>)}</ul>
             <p className="mt-1 text-[11px] text-slate-500">THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES</p>
           </div>
-          <button onClick={() => window.print()} className="mt-2 rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">🖨 Print receipt</button>
+          <button onClick={() => window.print()} className="mt-2 inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print receipt</button>
         </div>
         <div className="glass rounded-3xl p-6">
           <h2 className="font-bold text-slate-900">Upload proof of payment</h2>
@@ -76,7 +77,7 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
               {["GCASH", "MAYA", "BDO", "GOTYME", "CASH"].map((m) => <option key={m}>{m}</option>)}
             </select>
             <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
-            <button onClick={upload} disabled={busy || !file} className="rounded-xl bg-gradient-to-r from-red-800 to-red-600 px-4 py-2 text-sm font-bold text-white disabled:opacity-50">{busy ? "Uploading..." : "Upload proof"}</button>
+            <button onClick={upload} disabled={busy || !file} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-800 to-red-600 px-5 py-2.5 text-base font-bold text-white disabled:opacity-50"><Upload size={18} aria-hidden /> {busy ? "Uploading..." : "Upload proof"}</button>
           </div>
         </div>
       </main>
