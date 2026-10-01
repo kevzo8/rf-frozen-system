@@ -66,11 +66,30 @@ export default function Shop() {
 
   const priceMap = useMemo(() => new Map(((prices ?? []) as any[]).map((p: any) => [p.productName, p.price])), [prices]);
   const est = cart.reduce((s, c) => s + (Number(priceMap.get(c.productName)) || 0) * c.qtyBox, 0);
-  const boxCount = cart.reduce((s, c) => s + c.qtyBox, 0);
+  const unitCount = cart.reduce((s, c) => s + c.qtyBox, 0);
+  const [missing, setMissing] = useState<"name" | "items" | null>(null);
+
+  function scrollToId(id: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const top = el.getBoundingClientRect().top + window.scrollY - 110;
+    window.scrollTo({ top, behavior: "smooth" });
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
-    if (!name.trim() || cart.length === 0) return;
+    // Never disabled — guide to what's missing instead
+    if (!name.trim()) {
+      setMissing("name");
+      scrollToId("order-name");
+      return;
+    }
+    if (cart.length === 0) {
+      setMissing("items");
+      scrollToId("order-items");
+      return;
+    }
+    setMissing(null);
     setPlacing(true);
     try {
       const res = await (placeOrder as any)({ branch, customerName: name, mobile, address, items: cart });
@@ -181,12 +200,14 @@ export default function Shop() {
                 {BRANCHES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
               </select>
             </label>
-            <input aria-label="Full name" className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="Full name *" value={name} onChange={(e) => setName(e.target.value)} />
+            <input id="order-name" aria-label="Full name" aria-invalid={missing === "name"} className={`min-h-[48px] rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "name" ? "border-red-500 ring-2 ring-red-300 bg-red-50/60 dark:bg-red-950/30" : "border-slate-200 dark:border-white/10"}`} placeholder="Full name *" value={name} onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
             <input aria-label="Mobile number" className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="Mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
             <input aria-label="Delivery address" className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base sm:col-span-2 outline-none focus:ring-2 focus:ring-red-400" placeholder="Delivery / pickup address" value={address} onChange={(e) => setAddress(e.target.value)} />
           </div>
 
           <h2 className="flex items-center gap-2 font-display mt-6 text-xl font-bold tracking-wide"><Snowflake size={20} aria-hidden /> 2 • Pick items</h2>
+          {missing === "name" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Please enter your name first — we scrolled you to the missing field.</p>}
+          {missing === "items" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Your tray is empty — search below and tap + Add to add units.</p>}
           <div className="mt-2 flex gap-2">
             <div className="relative flex-1">
               <Search size={18} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
@@ -199,7 +220,7 @@ export default function Shop() {
               <option value="high">₱ High→Low</option>
             </select>
           </div>
-          <div className="mt-2 max-h-72 overflow-auto rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 divide-y divide-slate-100 dark:divide-white/5" aria-live="polite">
+          <div id="order-items" className={`mt-2 max-h-72 overflow-auto rounded-2xl border bg-white/70 dark:bg-black/30 divide-y divide-slate-100 dark:divide-white/5 scroll-mt-32 ${missing === "items" ? "border-red-500 ring-2 ring-red-300 border-white/60 dark:border-white/10" : "border-white/60 dark:border-white/10"}`} aria-live="polite">
             {prices === undefined ? (
               <div className="p-3"><SkeletonLines rows={4} /></div>
             ) : (
@@ -208,7 +229,7 @@ export default function Shop() {
                   <div key={p.productName} className="group flex items-center gap-2 px-3 py-2.5 text-base transition hover:bg-red-50/70 dark:hover:bg-white/5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{p.productName}</p>
-                      <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / box{p.notes ? ` • ${p.notes}` : ""}</p>
+                      <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / unit{p.notes ? ` • ${p.notes}` : ""}</p>
                     </div>
                     <button onClick={() => setCart([...cart, { productName: p.productName, qtyBox: 1 }])} aria-label={`Add ${p.productName}`}
                       className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full bg-gradient-to-r from-red-900 to-red-600 px-3 py-2 text-base font-semibold text-white transition hover:scale-105 focus-visible:outline-2"><Plus size={17} aria-hidden /> Add</button>
@@ -221,7 +242,7 @@ export default function Shop() {
 
           <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 p-[1px]">
             <div className="rounded-2xl bg-gradient-to-br from-slate-900/95 to-red-950/90 p-4 text-white backdrop-blur">
-              <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.25em] text-amber-200/80"><ShoppingCart size={14} aria-hidden /> Your tray • {boxCount} boxes</p>
+              <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.25em] text-amber-200/80"><ShoppingCart size={14} aria-hidden /> Your tray • {unitCount} units</p>
               {cart.length === 0 && <p className="mt-1 text-base text-white/60">Still empty — add some meaty goodness above.</p>}
               {cart.map((c, i) => (
                 <div key={i} className="mt-1.5 flex items-center gap-2 text-base">
@@ -236,8 +257,8 @@ export default function Shop() {
                 <span className="font-display text-base tracking-widest text-amber-100/80">ESTIMATE</span>
                 <span className="font-deco text-3xl text-amber-100">₱{est.toLocaleString()}</span>
               </div>
-              <button onClick={submit} disabled={placing || !name.trim() || cart.length === 0}
-                className="mt-3 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 py-3 text-lg font-bold text-red-950 transition hover:scale-[1.01] disabled:opacity-40 focus-visible:outline-2">
+              <button onClick={submit} aria-disabled={placing}
+                className="mt-3 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 py-3 text-lg font-bold text-red-950 transition hover:scale-[1.01] focus-visible:outline-2">
                 <ShoppingCart size={20} aria-hidden /> {placing ? "Placing..." : "Place order — get tracking number"}
               </button>
               {done && (
