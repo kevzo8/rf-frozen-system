@@ -9,7 +9,7 @@ import { Check, FolderOpen, Download, Trash2 } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
-const BRANCHES = ["stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
+const BRANCHES = ["stamesa", "pasig", "blumentritt", "novaliches", "laspinas"];
 
 export default function StorageManager() {
   const router = useRouter();

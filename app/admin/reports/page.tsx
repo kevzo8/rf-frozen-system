@@ -10,7 +10,7 @@ import { SkeletonLines } from "../../../components/Skeleton";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
-const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
+const BRANCHES = ["all", "stamesa", "pasig", "blumentritt", "novaliches", "laspinas"];
 
 function ReportsInner() {
   const router = useRouter();

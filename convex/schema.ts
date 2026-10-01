@@ -55,12 +55,19 @@ export default defineSchema({
       v.literal("dispatched"), v.literal("delivered"),
       v.literal("cancelled"), v.literal("returned")
     ),
-    items: v.array(v.object({ productName: v.string(), qtyBox: v.number(), estPrice: v.number() })),
+    items: v.array(v.object({ productName: v.string(), qtyBox: v.number(), estPrice: v.number(), weightKg: v.optional(v.number()), finalPrice: v.optional(v.number()) })),
     estimateTotal: v.number(),
     finalTotal: v.optional(v.number()),
     osNo: v.optional(v.string()), // RF55xxx
     invoiceNo: v.optional(v.string()), // 238xxx
     paymentMode: v.optional(v.string()), // CASH | GCASH | MAYA | BDO | GOTYME
+    receiptDate: v.optional(v.number()), // delivery/receipt date override (ms); defaults to createdAt
+    deliveredTo: v.optional(v.string()), // receipt "delivered to" override; defaults to company/contact
+    preparedBy: v.optional(v.string()),
+    checkedBy: v.optional(v.string()),
+    deliveredBy: v.optional(v.string()),
+    plateNo: v.optional(v.string()),
+    guardName: v.optional(v.string()),
     createdAt: v.number(),
   })
     .index("by_tracking", ["trackingId"])

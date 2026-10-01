@@ -106,10 +106,18 @@ export const updateOrder = mutation({
     mobile: v.optional(v.string()),
     branch: v.optional(v.string()),
     fulfillment: v.optional(v.union(v.literal("pickup"), v.literal("delivery"))),
+    address: v.optional(v.string()),
     osNo: v.optional(v.string()),
     invoiceNo: v.optional(v.string()),
     finalTotal: v.optional(v.number()),
     paymentMode: v.optional(v.string()),
+    receiptDate: v.optional(v.number()),
+    deliveredTo: v.optional(v.string()),
+    preparedBy: v.optional(v.string()),
+    checkedBy: v.optional(v.string()),
+    deliveredBy: v.optional(v.string()),
+    plateNo: v.optional(v.string()),
+    guardName: v.optional(v.string()),
   },
   handler: async (ctx, args) => {
     const u: any = await requireStaff(ctx, args.token);
@@ -124,12 +132,53 @@ export const updateOrder = mutation({
     if (args.mobile !== undefined) patch.mobile = args.mobile;
     if (args.branch !== undefined) patch.branch = args.branch;
     if (args.fulfillment !== undefined) patch.fulfillment = args.fulfillment;
+    if (args.address !== undefined) patch.address = args.address;
     if (args.osNo !== undefined) patch.osNo = args.osNo;
     if (args.invoiceNo !== undefined) patch.invoiceNo = args.invoiceNo;
     if (args.finalTotal !== undefined) patch.finalTotal = args.finalTotal;
     if (args.paymentMode !== undefined) patch.paymentMode = args.paymentMode;
+    if (args.receiptDate !== undefined) patch.receiptDate = args.receiptDate;
+    if (args.deliveredTo !== undefined) patch.deliveredTo = args.deliveredTo;
+    if (args.preparedBy !== undefined) patch.preparedBy = args.preparedBy;
+    if (args.checkedBy !== undefined) patch.checkedBy = args.checkedBy;
+    if (args.deliveredBy !== undefined) patch.deliveredBy = args.deliveredBy;
+    if (args.plateNo !== undefined) patch.plateNo = args.plateNo;
+    if (args.guardName !== undefined) patch.guardName = args.guardName;
     await ctx.db.patch(o._id, patch);
     return true;
+  },
+});
+
+export const setWeights = mutation({
+  args: {
+    token: v.string(),
+    trackingId: v.string(),
+    items: v.array(v.object({
+      productName: v.string(),
+      qtyBox: v.number(),
+      weightKg: v.number(),
+      price: v.number(),
+    })),
+  },
+  handler: async (ctx, args) => {
+    const u: any = await requireStaff(ctx, args.token);
+    if (u.role !== "admin" && u.role !== "biller") throw new Error("Biller only");
+    const tid = args.trackingId.trim().toLowerCase();
+    const o = await ctx.db.query("orders").withIndex("by_tracking", (q) => q.eq("trackingId", tid)).unique();
+    if (!o) throw new Error("Not found");
+    if (u.branch !== "all" && o.branch !== u.branch) throw new Error("Wrong branch");
+    let finalTotal = 0;
+    const patched = args.items.map((it) => {
+      const name = it.productName.trim();
+      if (!name) throw new Error("Item name required");
+      const qtyBox = Math.max(0, Math.floor(Number(it.qtyBox) || 0));
+      const weightKg = Math.max(0, Number(it.weightKg) || 0);
+      const price = Math.max(0, Number(it.price) || 0);
+      finalTotal += weightKg * price;
+      return { productName: name, qtyBox, estPrice: price, weightKg, finalPrice: price };
+    });
+    await ctx.db.patch(o._id, { items: patched, finalTotal: Math.round(finalTotal * 100) / 100 });
+    return { finalTotal: Math.round(finalTotal * 100) / 100 };
   },
 });
 

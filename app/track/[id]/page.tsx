@@ -6,6 +6,7 @@ import ThemeToggle from "../../../components/ThemeToggle";
 import { Printer, Upload, X, Trash2, ReceiptText, Route, Link2 } from "lucide-react";
 import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
+import SheetReceipt, { exportSheetsXlsx } from "../../../components/SheetReceipt";
 
 export const dynamic = "force-dynamic";
 
@@ -115,12 +116,29 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
                 )}
                 <p>Status: <b>{order.status}</b> • Payable: <b>₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b></p>
                 <p className="mt-1 break-all">Track anytime: <span className="font-mono">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}</span></p>
-                <ul className="mt-1 list-disc pl-5">{order.items.map((it: any, i: number) => <li key={i}>{it.productName} × {it.qtyBox} @ ₱{it.estPrice}</li>)}</ul>
-                <p className="mt-1 text-[11px] text-slate-500">THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES</p>
+                <ul className="mt-1 list-disc pl-5">{order.items.map((it: any, i: number) => {
+                  const kg = it.weightKg ?? 0;
+                  const price = it.finalPrice ?? it.estPrice;
+                  const amt = kg > 0 ? kg * price : it.qtyBox * price;
+                  return <li key={i}>{it.productName} — {it.qtyBox} box(es){kg > 0 ? ` • ${Number(kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : ""} @ ₱{price}/kg = ₱{Number(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</li>;
+                })}</ul>
+                <p className="mt-1 text-[11px] text-slate-500">Sold by weight — amount = kilos × price. THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES</p>
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button onClick={() => window.print()} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print receipt</button>
                 <button onClick={() => { const link = `${window.location.origin}/track/${order.trackingId}`; navigator.clipboard?.writeText(link); alert("Tracking link copied: " + link); }} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border px-5 py-2.5 text-base font-semibold"><Link2 size={18} aria-hidden /> Copy tracking link</button>
+              </div>
+            </div>
+
+            <div className="glass rounded-3xl p-6">
+              <h2 className="flex items-center gap-2 font-bold"><ReceiptText size={18} aria-hidden /> Tally + delivery sheets</h2>
+              <p className="text-xs text-slate-500">Picklist tally, delivery receipt, and RF deliveries — with kilo totals. Prints on 3 pages.</p>
+              <div className="mt-3 overflow-x-auto">
+                <SheetReceipt order={order} />
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button onClick={() => window.print()} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print all 3 sheets</button>
+                <button onClick={() => exportSheetsXlsx(order)} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl border px-5 py-2.5 text-base font-semibold">Export xlsx</button>
               </div>
             </div>
 

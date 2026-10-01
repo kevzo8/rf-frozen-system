@@ -16,7 +16,6 @@ export const dynamic = "force-dynamic";
 
 const BRANCHES = [
   { id: "stamesa", label: "Sta Mesa" },
-  { id: "qc", label: "Quezon City" },
   { id: "pasig", label: "Pasig" },
   { id: "blumentritt", label: "Blumentritt" },
   { id: "novaliches", label: "Novaliches" },
@@ -215,13 +214,23 @@ export default function Shop() {
                 From Belly Biso to CLQ Wings — order like Shopee. No login. Get a tracking number, pay via GCash / Maya / BDO / GoTyme / Cash, upload proof, we deliver.
               </p>
               <p className="mt-4 font-display text-sm font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-amber-100/80">Select branch and place your order</p>
-              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Choose branch">
-                {BRANCHES.map((b) => (
-                  <button key={b.id} onClick={() => setBranch(b.id)} aria-pressed={branch === b.id}
-                    className={`min-h-[44px] rounded-full px-4 py-2 text-base font-semibold transition hover:scale-105 focus-visible:outline-2 ${branch === b.id ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
-                    {b.label}
-                  </button>
-                ))}
+              <div className="mt-2 space-y-2" role="group" aria-label="Choose branch">
+                <div className="grid grid-cols-3 gap-2">
+                  {BRANCHES.slice(0, 3).map((b) => (
+                    <button key={b.id} onClick={() => setBranch(b.id)} aria-pressed={branch === b.id}
+                      className={`min-h-[44px] w-full rounded-full px-2 py-2 text-base font-semibold transition hover:scale-105 focus-visible:outline-2 ${branch === b.id ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  {BRANCHES.slice(3).map((b) => (
+                    <button key={b.id} onClick={() => setBranch(b.id)} aria-pressed={branch === b.id}
+                      className={`min-h-[44px] w-full rounded-full px-4 py-2 text-base font-semibold transition hover:scale-105 focus-visible:outline-2 ${branch === b.id ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
               </div>
               <div className="mt-4 flex flex-wrap items-center gap-2.5">
                 <span className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full bg-slate-900 dark:bg-amber-200 px-4 py-2 font-mono text-sm font-bold text-amber-100 dark:text-red-950 shadow">
@@ -349,8 +358,9 @@ export default function Shop() {
           )}
 
           <h2 className="flex items-center gap-2 font-display mt-6 text-xl font-bold tracking-wide"><Snowflake size={20} aria-hidden /> 2 • Pick items</h2>
+          <p className="mt-1 text-sm opacity-70">Sold by weight — prices are per kilo. Add boxes as estimate; final amount uses actual weighed kilos.</p>
           {missing === "name" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Please enter your name first — we scrolled you to the missing field.</p>}
-          {missing === "items" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Your tray is empty — search below and tap + Add to add units.</p>}
+          {missing === "items" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Your tray is empty — search below and tap + Add to add boxes.</p>}
           <div className="mt-2 flex gap-2">
             <div className="relative flex-1">
               <Search size={18} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
@@ -372,7 +382,7 @@ export default function Shop() {
                   <div key={p.productName} className="group flex items-center gap-2 px-3 py-2.5 text-base transition hover:bg-red-50/70 dark:hover:bg-white/5">
                     <div className="min-w-0 flex-1">
                       <p className="truncate font-medium">{p.productName}</p>
-                      <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / unit{p.notes ? ` • ${p.notes}` : ""}</p>
+                      <p className="font-mono text-sm text-red-800 dark:text-amber-200">₱{p.price} / kg{p.notes ? ` • ${p.notes}` : ""}</p>
                     </div>
                     <button onClick={() => setCart([...cart, { productName: p.productName, qtyBox: 1 }])} aria-label={`Add ${p.productName}`}
                       className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center gap-1 rounded-full bg-gradient-to-r from-red-900 to-red-600 px-3 py-2 text-base font-semibold text-white transition hover:scale-105 focus-visible:outline-2"><Plus size={17} aria-hidden /> Add</button>
@@ -385,7 +395,7 @@ export default function Shop() {
 
           <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 p-[1px]">
             <div className="rounded-2xl bg-gradient-to-br from-slate-900/95 to-red-950/90 p-4 text-white backdrop-blur">
-              <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.25em] text-amber-200/80"><ShoppingCart size={14} aria-hidden /> Your tray • {unitCount} units</p>
+              <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.25em] text-amber-200/80"><ShoppingCart size={14} aria-hidden /> Your tray • {unitCount} boxes</p>
               {cart.length === 0 && <p className="mt-1 text-base text-white/70">Still empty — add some meaty goodness above.</p>}
               <ul className="list-disc pl-5">
               {cart.map((c, i) => (
@@ -406,7 +416,7 @@ export default function Shop() {
               </div>
               <p className="mt-2 flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
                 <TriangleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
-                <span>Please double-check your name, mobile, branch, pickup/delivery, and tray units before placing the order.</span>
+                <span>Please double-check your name, mobile, branch, pickup/delivery, and tray boxes before placing the order.</span>
               </p>
               <div className="mt-2 rounded-2xl border border-slate-300 dark:border-white/20 bg-white/70 dark:bg-black/30 p-3 text-sm" aria-live="polite">
                 <p className="text-xs font-bold uppercase tracking-widest text-slate-700 dark:text-slate-200">Receipt preview — this is how it will print</p>
@@ -421,11 +431,11 @@ export default function Shop() {
                     <p>DELIVERY ADDRESS: <b>{address.trim() || "(address)"}</b></p>
                   )}
                   {cart.length > 0 ? (
-                    <ul className="mt-1 list-disc pl-5">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
+                    <ul className="mt-1 list-disc pl-5">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} box(es) @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}/kg</li>)}</ul>
                   ) : (
-                    <p className="text-slate-500">No units yet — add items below.</p>
+                    <p className="text-slate-500">No boxes yet — add items below.</p>
                   )}
-                  <p className="mt-1 font-bold">ESTIMATE: ₱{est.toLocaleString()}</p>
+                  <p className="mt-1 font-bold">ESTIMATE: ₱{est.toLocaleString()} (weighed per kilo at branch)</p>
                 </div>
               </div>
               <button onClick={submit} aria-disabled={placing}
@@ -444,7 +454,7 @@ export default function Shop() {
                       <p className="font-bold uppercase">{done.company || done.name} • {done.branch} • {done.fulfillment}</p>
                       <p className="opacity-70">{done.name}{done.company ? ` • ${done.mobile}` : ` • ${done.mobile}`}</p>
                       <ul className="mt-1">
-                        {done.items.map((i, k) => <li key={k}>{i.productName} × {i.qtyBox} @ ₱{i.price} = ₱{(i.price * i.qtyBox).toLocaleString()}</li>)}
+                        {done.items.map((i, k) => <li key={k}>{i.productName} × {i.qtyBox} box(es) @ ₱{i.price}/kg = ₱{(i.price * i.qtyBox).toLocaleString()}</li>)}
                       </ul>
                       <p className="mt-1 font-deco text-xl">₱{done.estimateTotal.toLocaleString()} <span className="font-body text-xs opacity-60">estimate — final after biller confirms</span></p>
                       <p className="mt-1 break-all text-xs opacity-60">QR holds: tracking link, name, company, mobile, branch, fulfillment, items, estimate.</p>
@@ -490,7 +500,7 @@ export default function Shop() {
         </section>
       </main>
 
-      <footer className="border-t border-white/50 dark:border-white/10 py-6 text-center font-display text-xs tracking-[0.25em] opacity-60">RF FROZEN MEAT CORP • STA MESA • QC • PASIG • BLUMENTRITT • NOVALICHES • LAS PIÑAS</footer>
+      <footer className="border-t border-white/50 dark:border-white/10 py-6 text-center font-display text-xs tracking-[0.25em] opacity-60">RF FROZEN MEAT CORP • STA MESA • PASIG • BLUMENTRITT • NOVALICHES • LAS PIÑAS</footer>
     </div>
   );
 }

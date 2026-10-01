@@ -7,7 +7,7 @@ import { useEffect, useState } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 import {
   ClipboardList, Tag, ChartBar, FolderOpen, Users, LogOut,
-  Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp, CircleUser,
+  Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp, CircleUser, ShoppingBag,
 } from "lucide-react";
 import { Skeleton, SkeletonCards } from "../../components/Skeleton";
 
@@ -52,13 +52,18 @@ export default function AdminHome() {
     <div className="min-h-screen font-body text-base text-slate-800 dark:text-rose-50">
       <header className="glass sticky top-0 z-20 border-b">
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-3">
-          <img src="/rf-logo.jpg" alt="RF" className="h-11 w-11 rounded-full object-cover ring-2 ring-white" />
-          <div>
-            <h1 className="font-display text-lg font-bold leading-tight">Dashboard</h1>
-            <p className="text-sm opacity-60">{(me as any)?.displayName} • {role} • {(me as any)?.branch}</p>
-          </div>
+          <a href="/admin" aria-label="Go to dashboard" className="flex items-center gap-3 rounded-2xl pr-2 transition hover:scale-[1.02]">
+            <img src="/rf-logo.jpg" alt="RF" className="h-11 w-11 rounded-full object-cover ring-2 ring-white" />
+            <div>
+              <h1 className="font-display text-lg font-bold leading-tight">Dashboard</h1>
+              <p className="text-sm opacity-60">{(me as any)?.displayName} • {role} • {(me as any)?.branch}</p>
+            </div>
+          </a>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
+            <a href="/" className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 text-base font-semibold transition hover:scale-[1.02]">
+              <ShoppingBag size={17} aria-hidden /> Shop
+            </a>
             <button onClick={doLogout} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-full border px-4 text-base font-semibold"><LogOut size={17} aria-hidden /> Logout</button>
           </div>
         </div>
@@ -70,11 +75,11 @@ export default function AdminHome() {
           <SkeletonCards count={4} />
         ) : (
         <section aria-label="Today at a glance" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <a href="/admin/orders" className="glass rounded-3xl p-4 border-2 border-emerald-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View paid orders">
+          <a href="/admin/reports?tab=cash" className="glass rounded-3xl p-4 border-2 border-emerald-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View cash report">
             <Banknote size={22} aria-hidden className="text-emerald-600" />
             <p className="mt-1 font-deco text-2xl text-emerald-700 dark:text-emerald-300">₱{Number((dash as any)?.revenue ?? 0).toLocaleString()}</p>
             <p className="text-sm font-bold">Paid revenue →</p>
-            <p className="text-sm opacity-60">{(dash as any)?.paidCount ?? 0} verified paid • tap to check orders</p>
+            <p className="text-sm opacity-60">{(dash as any)?.paidCount ?? 0} verified paid • tap for cash report</p>
           </a>
           <a href="/admin/reports?tab=credit" className="glass rounded-3xl p-4 border-2 border-amber-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View credit report">
             <Hourglass size={22} aria-hidden className="text-amber-600" />

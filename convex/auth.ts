@@ -121,6 +121,26 @@ export const setDisplayName = mutation({
   },
 });
 
+export const setPermissions = mutation({
+  args: {
+    token: v.string(),
+    username: v.string(),
+    role: v.union(v.literal("admin"), v.literal("biller"), v.literal("inventory")),
+    branch: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const admin = await requireAdmin(ctx, args.token);
+    const uname = args.username.trim().toLowerCase();
+    const u = await ctx.db.query("users").withIndex("by_username", (q) => q.eq("username", uname)).unique();
+    if (!u) throw new Error("User not found");
+    if (u.username === admin.username && args.role !== "admin") {
+      throw new Error("You cannot remove your own admin role");
+    }
+    await ctx.db.patch(u._id, { role: args.role, branch: args.branch.trim().toLowerCase() });
+    return true;
+  },
+});
+
 export const listUsers = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {

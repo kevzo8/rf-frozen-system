@@ -9,7 +9,7 @@ import { Users, UserPlus, ShieldCheck, Store } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
-const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
+const BRANCHES = ["all", "stamesa", "pasig", "blumentritt", "novaliches", "laspinas"];
 
 export default function UsersPage() {
   const router = useRouter();
@@ -27,8 +27,25 @@ export default function UsersPage() {
   const setActive = useMutation((api as any)?.auth?.setActive);
   const resetPw = useMutation((api as any)?.auth?.resetPassword);
   const setName = useMutation((api as any)?.auth?.setDisplayName);
+  const setPerms = useMutation((api as any)?.auth?.setPermissions);
   const [f, setF] = useState({ username: "", password: "", role: "biller", branch: "stamesa", displayName: "" });
   const [msg, setMsg] = useState("");
+  const [permMsg, setPermMsg] = useState("");
+  const [permBusy, setPermBusy] = useState<string | null>(null);
+
+  async function savePerms(u: any, role: string, branch: string) {
+    if (!token) return;
+    setPermBusy(u.username);
+    setPermMsg("");
+    try {
+      await (setPerms as any)({ token, username: u.username, role, branch });
+      setPermMsg(`Updated ${u.username}: ${role} • ${branch}`);
+    } catch (err: any) {
+      setPermMsg(err?.message ?? "Failed to update permissions");
+    } finally {
+      setPermBusy(null);
+    }
+  }
 
   if (!ready) return <main className="p-8 text-base">Loading...</main>;
   if (!token) return null;
@@ -77,19 +94,55 @@ export default function UsersPage() {
         </section>
         <section className="glass rounded-3xl p-5" aria-live="polite">
           <h2 className="flex items-center gap-2 font-bold"><Store size={18} aria-hidden /> All staff ({(users ?? []).length})</h2>
+          {permMsg && <p className="mt-1 text-sm font-semibold" role="status">{permMsg}</p>}
           {users === undefined ? (
             <div className="mt-2"><SkeletonLines rows={4} /></div>
           ) : (
           <ul className="mt-2 space-y-2">
             {(users ?? []).map((u: any) => (
-              <li key={u.username} className="flex flex-wrap items-center gap-2 rounded-2xl border border-white/40 dark:border-white/10 bg-white/60 dark:bg-black/20 px-3 py-2.5">
-                <div className="min-w-0 flex-1">
-                  <p className="font-semibold">{u.displayName} <span className="font-mono text-sm opacity-60">{u.username}</span></p>
-                  <p className="text-sm opacity-70">{u.role} • {u.branch} • {u.active ? "active" : "disabled"}</p>
+              <li key={u.username} className="rounded-2xl border border-white/40 dark:border-white/10 bg-white/60 dark:bg-black/20 px-3 py-2.5">
+                <div className="flex flex-wrap items-center gap-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold">{u.displayName} <span className="font-mono text-sm opacity-60">{u.username}</span></p>
+                    <p className="text-sm opacity-70">{u.role} • {u.branch} • {u.active ? "active" : "disabled"}{u.username === (me as any)?.username ? " • you" : ""}</p>
+                  </div>
+                  <button onClick={async () => { const np = prompt(`New password for ${u.username}`); if (np) { await (resetPw as any)({ token, username: u.username, newPassword: np }); alert("Reset done"); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Reset PW</button>
+                  <button onClick={async () => { const nn = prompt(`Display name for ${u.username}`, u.displayName); if (nn) { await (setName as any)({ token, username: u.username, displayName: nn }); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Edit name</button>
+                  <button onClick={async () => { await (setActive as any)({ token, username: u.username, active: !u.active }); }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">{u.active ? "Disable" : "Enable"}</button>
                 </div>
-                <button onClick={async () => { const np = prompt(`New password for ${u.username}`); if (np) { await (resetPw as any)({ token, username: u.username, newPassword: np }); alert("Reset done"); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Reset PW</button>
-                <button onClick={async () => { const nn = prompt(`Display name for ${u.username}`, u.displayName); if (nn) { await (setName as any)({ token, username: u.username, displayName: nn }); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Edit name</button>
-                <button onClick={async () => { await (setActive as any)({ token, username: u.username, active: !u.active }); }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">{u.active ? "Disable" : "Enable"}</button>
+                <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-white/40 dark:border-white/10 pt-2">
+                  <label className="flex min-h-[44px] items-center gap-1.5 text-sm font-semibold">
+                    Role
+                    <select
+                      aria-label={`Role for ${u.username}`}
+                      defaultValue={u.role}
+                      disabled={permBusy === u.username || u.username === (me as any)?.username}
+                      onChange={(e) => savePerms(u, e.target.value, (document.getElementById(`branch-${u.username}`) as HTMLSelectElement)?.value ?? u.branch)}
+                      className="min-h-[44px] rounded-xl border px-2 py-1 text-sm disabled:opacity-50"
+                    >
+                      <option value="admin">admin</option><option value="biller">biller</option><option value="inventory">inventory</option>
+                    </select>
+                  </label>
+                  <label className="flex min-h-[44px] items-center gap-1.5 text-sm font-semibold">
+                    Branch
+                    <select
+                      id={`branch-${u.username}`}
+                      aria-label={`Branch for ${u.username}`}
+                      defaultValue={u.branch}
+                      disabled={permBusy === u.username}
+                      onChange={(e) => {
+                        const roleEl = document.querySelector(`select[aria-label="Role for ${u.username}"]`) as HTMLSelectElement;
+                        savePerms(u, roleEl?.value ?? u.role, e.target.value);
+                      }}
+                      className="min-h-[44px] rounded-xl border px-2 py-1 text-sm disabled:opacity-50"
+                    >
+                      {BRANCHES.map((b) => <option key={b} value={b}>{b}</option>)}
+                    </select>
+                  </label>
+                  {u.username === (me as any)?.username
+                    ? <span className="text-xs opacity-60">Role locked for your own account</span>
+                    : permBusy === u.username && <span className="text-xs opacity-60">Saving…</span>}
+                </div>
               </li>
             ))}
           </ul>
