@@ -21,16 +21,24 @@ export const summary = query({
     const today = orders.filter((o) => o.createdAt >= start && o.createdAt < end);
     const byStatus: Record<string, number> = {};
     for (const o of today) byStatus[o.status] = (byStatus[o.status] ?? 0) + 1;
-    const revenue = today.reduce((s, o) => s + (o.finalTotal ?? 0), 0);
+    // Paid = money in hand: payment verified and beyond (picking/checking/dispatched/delivered)
+    const PAID = ["payment_verified", "picking", "checking", "dispatched", "delivered"];
+    // Receivable/credit = ordered but not yet verified paid
+    const OWED = ["placed", "confirmed", "to_pay", "proof_uploaded"];
+    const paidOrders = today.filter((o) => PAID.includes(o.status));
+    const owedOrders = today.filter((o) => OWED.includes(o.status));
+    const revenue = paidOrders.reduce((s, o) => s + (o.finalTotal ?? 0), 0);
+    const receivable = owedOrders.reduce((s, o) => s + (o.finalTotal ?? o.estimateTotal), 0);
     const estimate = today.reduce((s, o) => s + o.estimateTotal, 0);
-    const byBranch: Record<string, { orders: number; revenue: number }> = {};
+    const byBranch: Record<string, { orders: number; revenue: number; receivable: number }> = {};
     for (const o of today) {
-      if (!byBranch[o.branch]) byBranch[o.branch] = { orders: 0, revenue: 0 };
+      if (!byBranch[o.branch]) byBranch[o.branch] = { orders: 0, revenue: 0, receivable: 0 };
       byBranch[o.branch].orders += 1;
-      byBranch[o.branch].revenue += o.finalTotal ?? 0;
+      if (PAID.includes(o.status)) byBranch[o.branch].revenue += o.finalTotal ?? 0;
+      else if (OWED.includes(o.status)) byBranch[o.branch].receivable += o.finalTotal ?? o.estimateTotal;
     }
     const prices = await ctx.db.query("prices").collect();
     const proofs = (await ctx.db.query("proofs").collect()).filter((p) => scope(p.branch) && p.uploadedAt >= start && p.uploadedAt < end);
-    return { date, totalToday: today.length, pending: (byStatus["placed"] ?? 0) + (byStatus["confirmed"] ?? 0), awaitingPayment: (byStatus["to_pay"] ?? 0) + (byStatus["proof_uploaded"] ?? 0), revenue, estimate, byStatus, byBranch, priceCount: prices.length, proofsToday: proofs.length, unexportedProofs: proofs.filter((p) => !p.exportedAt).length };
+    return { date, totalToday: today.length, pending: (byStatus["placed"] ?? 0) + (byStatus["confirmed"] ?? 0), awaitingPayment: (byStatus["to_pay"] ?? 0) + (byStatus["proof_uploaded"] ?? 0), revenue, receivable, paidCount: paidOrders.length, owedCount: owedOrders.length, estimate, byStatus, byBranch, priceCount: prices.length, proofsToday: proofs.length, unexportedProofs: proofs.filter((p) => !p.exportedAt).length };
   },
 });

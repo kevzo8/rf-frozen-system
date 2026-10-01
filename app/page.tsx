@@ -8,6 +8,7 @@ import {
   Store, Tag, TriangleAlert, ArrowRight, CircleCheck, Info, ClipboardList,
 } from "lucide-react";
 import { SkeletonLines } from "../components/Skeleton";
+import LifecycleGuide from "../components/LifecycleGuide";
 
 export const dynamic = "force-dynamic";
 
@@ -261,10 +262,10 @@ export default function Shop() {
               <a href={`/track/${lookup.trackingId}`} className="mt-3 flex min-h-[48px] items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-red-900 to-red-600 px-3 py-2.5 text-center text-base font-semibold text-white"><ReceiptText size={18} aria-hidden /> Open receipt / upload proof</a>
             </div>
           )}
-          <div className="mt-4 flex gap-2 rounded-2xl border border-sky-200/60 dark:border-white/10 bg-sky-50/70 dark:bg-cyan-950/30 p-3 text-sm leading-relaxed">
-            <Info size={18} aria-hidden className="mt-0.5 shrink-0" />
-            <div><p className="font-display font-bold tracking-widest text-sky-900 dark:text-sky-200">HOW IT WORKS</p>
-            <p className="mt-1 opacity-80">1. Order → 2. Biller confirms &amp; sets final price → 3. Pay GCash / Maya / BDO / GoTyme / Cash → 4. Upload proof → 5. Verified → 6. Delivered.</p></div>
+          <div className="mt-4 rounded-2xl border border-sky-200/60 dark:border-white/10 bg-sky-50/70 dark:bg-cyan-950/30 p-4">
+            <p className="flex items-center gap-2 font-display font-bold tracking-widest text-sky-900 dark:text-sky-200"><Info size={18} aria-hidden /> HOW IT WORKS — follow the trail</p>
+            <div className="mt-3"><LifecycleGuide /></div>
+            <p className="mt-2 text-sm opacity-80">Pay with GCash / Maya / BDO / GoTyme / Cash. Green trail = done, glowing ring = where your order is.</p>
           </div>
         </section>
       </main>

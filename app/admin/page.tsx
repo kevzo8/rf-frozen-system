@@ -69,19 +69,30 @@ export default function AdminHome() {
           <SkeletonCards count={4} />
         ) : (
         <section aria-label="Today at a glance" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          {[
-            { icon: ClipboardList, label: "Orders today", value: (dash as any)?.totalToday ?? "…", sub: `${(dash as any)?.pending ?? 0} need confirm` },
-            { icon: Banknote, label: "Verified revenue", value: `₱${Number((dash as any)?.revenue ?? 0).toLocaleString()}`, sub: "payment_verified and beyond" },
-            { icon: Hourglass, label: "Awaiting payment", value: (dash as any)?.awaitingPayment ?? "…", sub: "to_pay + proof_uploaded" },
-            { icon: Wallet, label: "Proofs today", value: (dash as any)?.proofsToday ?? "…", sub: `${(dash as any)?.unexportedProofs ?? 0} unexported` },
-          ].map((c) => (
-            <div key={c.label} className="glass rounded-3xl p-4">
-              <c.icon size={22} aria-hidden className="opacity-60" />
-              <p className="mt-1 font-deco text-2xl">{c.value}</p>
-              <p className="text-sm font-semibold">{c.label}</p>
-              <p className="text-sm opacity-60">{c.sub}</p>
-            </div>
-          ))}
+          <div className="glass rounded-3xl p-4 border-2 border-emerald-400/50">
+            <Banknote size={22} aria-hidden className="text-emerald-600" />
+            <p className="mt-1 font-deco text-2xl text-emerald-700 dark:text-emerald-300">₱{Number((dash as any)?.revenue ?? 0).toLocaleString()}</p>
+            <p className="text-sm font-bold">Paid revenue</p>
+            <p className="text-sm opacity-60">{(dash as any)?.paidCount ?? 0} orders verified paid</p>
+          </div>
+          <div className="glass rounded-3xl p-4 border-2 border-amber-400/50">
+            <Hourglass size={22} aria-hidden className="text-amber-600" />
+            <p className="mt-1 font-deco text-2xl text-amber-700 dark:text-amber-300">₱{Number((dash as any)?.receivable ?? 0).toLocaleString()}</p>
+            <p className="text-sm font-bold">To collect (credit)</p>
+            <p className="text-sm opacity-60">{(dash as any)?.owedCount ?? 0} orders unpaid — see Credit report</p>
+          </div>
+          <div className="glass rounded-3xl p-4">
+            <ClipboardList size={22} aria-hidden className="opacity-60" />
+            <p className="mt-1 font-deco text-2xl">{(dash as any)?.totalToday ?? 0}</p>
+            <p className="text-sm font-bold">Orders today</p>
+            <p className="text-sm opacity-60">{(dash as any)?.pending ?? 0} need confirm</p>
+          </div>
+          <div className="glass rounded-3xl p-4">
+            <Wallet size={22} aria-hidden className="opacity-60" />
+            <p className="mt-1 font-deco text-2xl">{(dash as any)?.proofsToday ?? 0}</p>
+            <p className="text-sm font-bold">Proofs today</p>
+            <p className="text-sm opacity-60">{(dash as any)?.unexportedProofs ?? 0} unexported</p>
+          </div>
         </section>
         )}
 

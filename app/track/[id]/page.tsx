@@ -3,8 +3,9 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { use, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Printer, Upload, ReceiptText } from "lucide-react";
+import { Printer, Upload, ReceiptText, Route } from "lucide-react";
 import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
+import LifecycleGuide from "../../../components/LifecycleGuide";
 
 export const dynamic = "force-dynamic";
 const STEPS = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -69,13 +70,9 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
         <div className="glass-strong rounded-3xl p-6">
           <p className="font-mono text-sm text-slate-500">{order.trackingId}</p>
           <h1 className="text-xl font-black text-slate-900">{order.customerName} • {order.branch}</h1>
-          <p className="text-sm text-slate-600">Payable: <b className="text-slate-900 text-lg">₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b> • {order.paymentMode ?? "waiting for biller confirmation"}</p>
-          <div className="mt-3 space-y-1.5">
-            {STEPS.map((s) => {
-              const on = STEPS.indexOf(s) <= STEPS.indexOf(order.status);
-              return <div key={s} className="flex items-center gap-2 text-sm"><span className={`h-2.5 w-2.5 rounded-full ${on ? "bg-emerald-500" : "bg-slate-300"}`} /><span className={on ? "text-slate-900 font-medium" : "text-slate-400"}>{LABEL[s]}</span></div>;
-            })}
-          </div>
+          <p className="text-base">Payable: <b className="text-lg">₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b> • {order.paymentMode ?? "waiting for biller confirmation"}</p>
+          <h2 className="mt-4 flex items-center gap-2 font-display text-base font-bold tracking-wide"><Route size={18} aria-hidden /> Where is my order?</h2>
+          <div className="mt-2"><LifecycleGuide current={order.status} /></div>
         </div>
         <div className="glass rounded-3xl p-6">
           <h2 className="flex items-center gap-2 font-bold"><ReceiptText size={18} aria-hidden /> Receipt — print / screenshot this</h2>
