@@ -27,7 +27,7 @@ export default function PricesManager() {
 
   const rows = useMemo(() => {
     const s = q.toLowerCase();
-    return ((prices ?? []) as any[]).filter((p) => !s || p.productName.toLowerCase().includes(s) || String(p.price).includes(s));
+    return ((prices ?? []) as any[]).filter((p) => !s || p.productName.toLowerCase().includes(s) || String(p.price).includes(s) || (p.notes ?? "").toLowerCase().includes(s));
   }, [prices, q]);
 
   async function saveEdit() {
@@ -81,7 +81,7 @@ export default function PricesManager() {
       </header>
       <main className="mx-auto max-w-6xl px-5 py-5">
         <div className="glass rounded-2xl p-4 flex flex-wrap gap-2 items-center text-sm">
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name or price..." className="flex-1 rounded-xl border px-3 py-2" />
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, price, or notes..." className="flex-1 rounded-xl border px-3 py-2" />
           <label className="rounded-xl border px-3 py-2 cursor-pointer">Import xlsx (A=name B=price C=notes)<input type="file" accept=".xlsx" className="hidden" onChange={onFile} /></label>
         </div>
         <div className="mt-3 glass rounded-2xl overflow-auto" aria-live="polite">

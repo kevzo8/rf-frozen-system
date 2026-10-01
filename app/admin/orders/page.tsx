@@ -3,19 +3,21 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Check, ReceiptText, ArrowRight, ClipboardList, Wallet } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 const FLOW = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
 
-export default function OrdersBoard() {
+function OrdersBoardInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const [token, setTok] = useState<string | null>(null);
-  const [status, setStatus] = useState("all");
+  const [status, setStatus] = useState(() => params.get("status") ?? "all");
   const [sel, setSel] = useState<any>(null);
   const [final, setFinal] = useState("");
   const [mode, setMode] = useState("GCASH");
@@ -118,5 +120,13 @@ export default function OrdersBoard() {
         </div>
       </main>
     </div>
+  );
+}
+
+export default function OrdersBoard() {
+  return (
+    <Suspense fallback={<main className="p-8 text-base">Loading orders...</main>}>
+      <OrdersBoardInner />
+    </Suspense>
   );
 }

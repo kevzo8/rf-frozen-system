@@ -56,7 +56,7 @@ export default function Shop() {
     let rows = (prices as any[]).filter((p: any) => {
       if (!s) return true;
       if (isNum) return String(p.price).includes(s) || p.price === num;
-      return p.productName.toLowerCase().includes(s) || String(p.price).includes(s);
+      return p.productName.toLowerCase().includes(s) || String(p.price).includes(s) || (p.notes ?? "").toLowerCase().includes(s);
     });
     if (sort === "low") rows = [...rows].sort((a, b) => a.price - b.price);
     else if (sort === "high") rows = [...rows].sort((a, b) => b.price - a.price);
@@ -211,7 +211,7 @@ export default function Shop() {
           <div className="mt-2 flex gap-2">
             <div className="relative flex-1">
               <Search size={18} aria-hidden className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50" />
-              <input aria-label="Search items" className="min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 pl-10 pr-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-sky-400" placeholder="Search name or price — Belly, CLQ, or 245..." value={search} onChange={(e) => setSearch(e.target.value)} />
+              <input aria-label="Search items" className="min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 pl-10 pr-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-sky-400" placeholder="Search name, price, or notes — Belly, 245, parating..." value={search} onChange={(e) => setSearch(e.target.value)} />
             </div>
             <select value={sort} onChange={(e) => setSort(e.target.value as any)} title="Sort" aria-label="Sort items"
               className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-2 py-2.5 text-base font-semibold outline-none">

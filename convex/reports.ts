@@ -14,7 +14,9 @@ function dayRange(date: string) {
   return { start, end: start + 24 * 60 * 60 * 1000 };
 }
 
-// Cash report rows: mirrors CASH-REPORT xlsx columns
+// Cash report rows: money actually RECEIVED — paid statuses only
+// (payment_verified and beyond). Unpaid (placed/confirmed/to_pay/proof_uploaded)
+// belongs in the Credit report, never in cash totals.
 export const cash = query({
   args: { token: v.string(), branch: v.string(), date: v.string() },
   handler: async (ctx, args) => {
@@ -24,7 +26,7 @@ export const cash = query({
     const rows = all.filter((o) =>
       (u.branch !== "all" ? o.branch === u.branch : args.branch === "all" ? true : o.branch === args.branch) &&
       o.createdAt >= start && o.createdAt < end &&
-      ["payment_verified", "picking", "checking", "dispatched", "delivered", "to_pay", "proof_uploaded"].includes(o.status)
+      ["payment_verified", "picking", "checking", "dispatched", "delivered"].includes(o.status)
     );
     let bill = 0, cash = 0, gcash = 0, bank = 0;
     const lines = rows.map((o) => {

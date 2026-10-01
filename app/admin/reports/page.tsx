@@ -3,20 +3,22 @@ import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Download, ChartBar } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
+import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
 const BRANCHES = ["all", "stamesa", "qc", "pasig", "blumentritt", "novaliches", "laspinas"];
 
-export default function Reports() {
+function ReportsInner() {
   const router = useRouter();
+  const params = useSearchParams();
   const [token, setTok] = useState<string | null>(null);
   const [branch, setBranch] = useState("stamesa");
   const [date, setDate] = useState(() => new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10));
-  const [tab, setTab] = useState<"cash" | "sales" | "credit" | "receipt">("cash");
+  const [tab, setTab] = useState<"cash" | "sales" | "credit" | "receipt">(() => (params.get("tab") as any) ?? "cash");
   useEffect(() => {
     const t = getToken();
     if (!t) router.push("/admin/login");
@@ -62,7 +64,7 @@ export default function Reports() {
     a.click();
   }
 
-  if (!token) return <main className="p-8 text-sm">Loading...</main>;
+  if (!token) return <main className="p-8 text-base">Loading...</main>;
 
   return (
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
@@ -120,5 +122,13 @@ export default function Reports() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function Reports() {
+  return (
+    <Suspense fallback={<main className="p-8 text-base">Loading reports...</main>}>
+      <ReportsInner />
+    </Suspense>
   );
 }
