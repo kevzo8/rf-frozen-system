@@ -79,6 +79,7 @@ export default function Shop() {
     items: { productName: string; qtyBox: number; price: number }[];
   } | null>(null);
   const [placing, setPlacing] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [track, setTrack] = useState("");
   const [lookup, setLookup] = useState<any>(null);
 
@@ -399,6 +400,10 @@ export default function Shop() {
                 <span className="font-display text-base tracking-widest text-amber-100/80">ESTIMATE</span>
                 <span className="font-deco text-3xl text-amber-100">₱{est.toLocaleString()}</span>
               </div>
+              <p className="mt-2 flex items-start gap-2 rounded-xl border border-amber-300/50 bg-amber-50/70 dark:bg-amber-950/30 px-3 py-2 text-sm text-amber-950 dark:text-amber-100">
+                <TriangleAlert size={16} aria-hidden className="mt-0.5 shrink-0" />
+                <span>Please double-check your name, mobile, branch, pickup/delivery, and tray units before placing the order.</span>
+              </p>
               <button onClick={submit} aria-disabled={placing}
                 className="mt-3 inline-flex min-h-[52px] w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-300 via-orange-400 to-rose-400 py-3 text-lg font-bold text-red-950 transition hover:scale-[1.01] focus-visible:outline-2">
                 <ShoppingCart size={20} aria-hidden /> {placing ? "Placing..." : "Place order — get tracking number"}
@@ -423,8 +428,10 @@ export default function Shop() {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <a href={`/track/${done.trackingId}`} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 dark:bg-amber-200 dark:text-red-950 px-5 py-2 text-base font-bold text-white">Track + upload proof <ArrowRight size={17} aria-hidden /></a>
-                    <button type="button" onClick={() => { navigator.clipboard?.writeText(done.trackingId); }} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base font-semibold">Copy tracking #</button>
+                    <button type="button" onClick={(e) => { navigator.clipboard?.writeText(done.trackingId); const b = (e.currentTarget as HTMLButtonElement); b.dataset.done = "1"; setCopied(true); setTimeout(() => setCopied(false), 2500); }} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base font-semibold">Copy tracking number</button>
                     <button type="button" onClick={() => setDone(null)} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base">New order</button>
+                  </div>
+                  {copied && <p role="status" className="mt-2 flex items-center gap-1.5 text-sm font-bold text-emerald-700 dark:text-emerald-300"><CircleCheck size={16} aria-hidden /> Tracking number copied!</p>}
                   </div>
                 </div>
               )}
