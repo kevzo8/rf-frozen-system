@@ -386,16 +386,20 @@ export default function Shop() {
           <div className="mt-3 overflow-hidden rounded-2xl bg-gradient-to-br from-slate-900 via-red-950 to-slate-900 p-[1px]">
             <div className="rounded-2xl bg-gradient-to-br from-slate-900/95 to-red-950/90 p-4 text-white backdrop-blur">
               <p className="flex items-center gap-1.5 font-mono text-xs uppercase tracking-[0.25em] text-amber-200/80"><ShoppingCart size={14} aria-hidden /> Your tray • {unitCount} units</p>
-              {cart.length === 0 && <p className="mt-1 text-base text-white/60">Still empty — add some meaty goodness above.</p>}
+              {cart.length === 0 && <p className="mt-1 text-base text-white/70">Still empty — add some meaty goodness above.</p>}
+              <ul className="list-disc pl-5">
               {cart.map((c, i) => (
-                <div key={i} className="mt-1.5 flex items-center gap-2 text-base">
-                  <span className="flex-1 truncate">{c.productName}</span>
+                <li key={i} className="mt-1.5">
+                <div className="flex items-center gap-2 text-base">
+                  <span className="flex-1 truncate text-white">{c.productName}</span>
                   <input aria-label={`Quantity for ${c.productName}`} type="number" min={1} value={c.qtyBox} onChange={(e) => { const v = [...cart]; v[i].qtyBox = Math.max(1, Number(e.target.value) || 1); setCart(v); }}
-                    className="min-h-[44px] w-20 rounded-lg px-2 py-1 !text-slate-900" />
-                  <span className="w-24 text-right font-mono">₱{((Number(priceMap.get(c.productName)) || 0) * c.qtyBox).toLocaleString()}</span>
-                  <button onClick={() => setCart(cart.filter((_, j) => j !== i))} aria-label={`Remove ${c.productName}`} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-white/60 hover:text-white"><X size={18} aria-hidden /></button>
+                    className="min-h-[44px] w-20 rounded-lg border border-white/40 bg-white px-2 py-1 text-slate-900 dark:bg-white dark:text-slate-900" />
+                  <span className="w-24 text-right font-mono text-white">₱{((Number(priceMap.get(c.productName)) || 0) * c.qtyBox).toLocaleString()}</span>
+                  <button onClick={() => setCart(cart.filter((_, j) => j !== i))} aria-label={`Remove ${c.productName}`} className="inline-flex min-h-[44px] min-w-[44px] items-center justify-center text-white/70 hover:text-white"><X size={18} aria-hidden /></button>
                 </div>
+                </li>
               ))}
+              </ul>
               <div className="mt-3 flex items-center justify-between border-t border-white/15 pt-3">
                 <span className="font-display text-base tracking-widest text-amber-100/80">ESTIMATE</span>
                 <span className="font-deco text-3xl text-amber-100">₱{est.toLocaleString()}</span>
@@ -406,15 +410,20 @@ export default function Shop() {
               </p>
               <div className="mt-2 rounded-2xl border border-white/60 dark:border-white/10 bg-white/70 dark:bg-black/30 p-3 text-sm" aria-live="polite">
                 <p className="text-xs font-bold uppercase tracking-widest opacity-60">Receipt preview — this is how it will print</p>
-                <div className="mt-1 rounded-xl bg-white/90 dark:bg-black/30 border p-2.5">
+                <div className="mt-1 rounded-xl border border-slate-200 bg-white p-2.5 text-slate-900">
                   <p className="font-black">RF FROZEN MEAT CORP — {branch.toUpperCase()}</p>
-                  <p>RECEIPT NAME: <b>{(name.trim() || "YOUR NAME").toUpperCase()}</b></p>
+                  <p>CONTACT NAME: <b>{(name.trim() || "YOUR NAME").toUpperCase()}</b></p>
                   {company.trim() && <p>COMPANY: <b>{company.trim().toUpperCase()}</b></p>}
-                  <p>MOBILE: {mobile.trim() || "—"} • {fulfillment === "pickup" ? `PICKUP — ${BRANCHES.find((b) => b.id === branch)?.label} branch` : `DELIVERY — ${address.trim() || "(address)"}`}</p>
-                  {cart.length > 0 ? (
-                    <ul className="mt-1">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
+                  <p>CONTACT NUMBER: {mobile.trim() || "—"}</p>
+                  {fulfillment === "pickup" ? (
+                    <p>PICKUP — {BRANCHES.find((b) => b.id === branch)?.label} branch</p>
                   ) : (
-                    <p className="opacity-60">No units yet — add items below.</p>
+                    <p>DELIVERY ADDRESS:<br /><b>{address.trim() || "(address)"}</b></p>
+                  )}
+                  {cart.length > 0 ? (
+                    <ul className="mt-1 list-disc pl-5">{cart.map((c, i) => <li key={i}>{c.productName} × {c.qtyBox} @ ₱{(Number(priceMap.get(c.productName)) || 0).toLocaleString()}</li>)}</ul>
+                  ) : (
+                    <p className="text-slate-500">No units yet — add items below.</p>
                   )}
                   <p className="mt-1 font-bold">ESTIMATE: ₱{est.toLocaleString()}</p>
                 </div>
