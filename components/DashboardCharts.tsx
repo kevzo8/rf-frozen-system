@@ -144,33 +144,44 @@ export function Donut({
   );
 }
 
-/** Horizontal mini bars for order status (Pending → Confirmed → Packed → Shipped → Delivered). */
+/** Order pipeline: horizontal bars per status in flow order. Only shows statuses with orders. */
 export function StatusBars({ byStatus }: { byStatus: Record<string, number> }) {
-  const stages = ["Pending", "Confirmed", "Packed", "Shipped", "Delivered"];
-  const colors = ["#f87171", "#fbbf24", "#a3e635", "#60a5fa", "#84cc16"];
-  const max = Math.max(1, ...stages.map((s) => (byStatus[s] ?? 0)));
-  const barW = 44;
-  const gap = 8;
-  const innerH = 24;
-  const svgH = innerH + 12;
+  const stages: { key: string; label: string; color: string }[] = [
+    { key: "placed", label: "Placed", color: "#64748b" },
+    { key: "confirmed", label: "Confirmed", color: "#3b82f6" },
+    { key: "to_pay", label: "To pay", color: "#f59e0b" },
+    { key: "proof_uploaded", label: "Proof uploaded", color: "#a855f7" },
+    { key: "payment_verified", label: "Payment verified", color: "#14b8a6" },
+    { key: "picking", label: "Picking", color: "#f97316" },
+    { key: "checking", label: "Checking", color: "#eab308" },
+    { key: "dispatched", label: "Dispatched", color: "#6366f1" },
+    { key: "delivered", label: "Delivered", color: "#10b981" },
+    { key: "cancelled", label: "Cancelled", color: "#f43f5e" },
+    { key: "returned", label: "Returned", color: "#78716c" },
+  ];
+  const visible = stages.filter((s) => (byStatus[s.key] ?? 0) > 0);
+  if (visible.length === 0) return <p className="text-sm opacity-60">Nothing yet.</p>;
+  const max = Math.max(1, ...visible.map((s) => byStatus[s.key]));
+  const total = visible.reduce((t, s) => t + byStatus[s.key], 0);
   return (
-    <div className="flex items-center gap-2">
-      {stages.map((s, i) => {
-        const v = byStatus[s] ?? 0;
-        const pct = (v / max) * 100;
-        return (
-          <div key={s} className="flex flex-col items-start gap-1 text-xs">
-            <span className="min-w-[60px] font-semibold text-slate-700 dark:text-slate-300">{s}</span>
-            <div className="w-full bg-slate-200 dark:bg-amber-800 rounded-full h-2">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-current via-current to-current"
-                style={{ width: `${pct}%` }}
-              ></div>
-            </div>
-            <span className="text-[10px] font-mono opacity-70">{fmtPeso(v)}</span>
-          </div>
-        );
-      })}
+    <div>
+      <ol className="space-y-2">
+        {visible.map((s) => {
+          const v = byStatus[s.key];
+          return (
+            <li key={s.key}>
+              <a href={`/admin/orders?status=${s.key}`} className="flex items-baseline justify-between gap-2 text-sm rounded-lg transition hover:opacity-80">
+                <span className="min-w-0 flex-1 truncate font-semibold">{s.label}</span>
+                <b className="font-mono">{v} order{v === 1 ? "" : "s"}</b>
+              </a>
+              <div className="mt-1 h-3 overflow-hidden rounded-full bg-black/10 dark:bg-white/10">
+                <div className="h-full rounded-full" style={{ width: `${Math.max(3, (v / max) * 100)}%`, background: s.color }} />
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="mt-2 text-sm opacity-60">{total} order{total === 1 ? "" : "s"} in today&apos;s pipeline • tap a stage to open it</p>
     </div>
   );
 }

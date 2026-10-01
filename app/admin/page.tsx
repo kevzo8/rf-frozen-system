@@ -71,36 +71,38 @@ export default function AdminHome() {
         {dash === undefined ? (
           <SkeletonCards count={4} />
         ) : (
-        <section aria-label="Today at a glance" className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <a href="/admin/reports?tab=cash" className="glass rounded-3xl p-4 border-2 border-emerald-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View cash report">
-            <Banknote size={22} aria-hidden className="text-emerald-600" />
-            <p className="mt-1 font-deco text-2xl text-emerald-700 dark:text-emerald-300">₱{Number((dash as any)?.revenue ?? 0).toLocaleString()}</p>
+        <section aria-label="Today at a glance" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+          <a href="/admin/reports?tab=cash" className="glass rounded-2xl p-3 border-2 border-emerald-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View cash report">
+            <Banknote size={20} aria-hidden className="text-emerald-600" />
+            <p className="mt-1 font-deco text-xl text-emerald-700 dark:text-emerald-300">₱{Number((dash as any)?.revenue ?? 0).toLocaleString()}</p>
             <p className="text-sm font-bold">Paid revenue →</p>
-            <p className="text-sm opacity-60">{(dash as any)?.paidCount ?? 0} verified paid • tap for cash report</p>
+            <p className="text-xs opacity-60">{(dash as any)?.paidCount ?? 0} verified paid • tap for cash report</p>
           </a>
-          <a href="/admin/reports?tab=credit" className="glass rounded-3xl p-4 border-2 border-amber-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View credit report">
-            <Hourglass size={22} aria-hidden className="text-amber-600" />
-            <p className="mt-1 font-deco text-2xl text-amber-700 dark:text-amber-300">₱{Number((dash as any)?.receivable ?? 0).toLocaleString()}</p>
+          <a href="/admin/reports?tab=credit" className="glass rounded-2xl p-3 border-2 border-amber-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View credit report">
+            <Hourglass size={20} aria-hidden className="text-amber-600" />
+            <p className="mt-1 font-deco text-xl text-amber-700 dark:text-amber-300">₱{Number((dash as any)?.receivable ?? 0).toLocaleString()}</p>
             <p className="text-sm font-bold">To collect (credit) →</p>
-            <p className="text-sm opacity-60">{(dash as any)?.owedCount ?? 0} unpaid • tap for credit report</p>
+            <p className="text-xs opacity-60">{(dash as any)?.owedCount ?? 0} unpaid • tap for credit report</p>
           </a>
-          <a href="/admin/orders?status=placed" className="glass rounded-3xl p-4 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View incoming orders">
-            <ClipboardList size={22} aria-hidden className="opacity-60" />
-            <p className="mt-1 font-deco text-2xl">{(dash as any)?.totalToday ?? 0}</p>
+          <a href="/admin/orders?status=placed" className="glass rounded-2xl p-3 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View incoming orders">
+            <ClipboardList size={20} aria-hidden className="opacity-60" />
+            <p className="mt-1 font-deco text-xl">{(dash as any)?.totalToday ?? 0}</p>
             <p className="text-sm font-bold">Orders today →</p>
-            <p className="text-sm opacity-60">{(dash as any)?.pending ?? 0} need confirm • tap to check</p>
+            <p className="text-xs opacity-60">{(dash as any)?.pending ?? 0} need confirm • tap to check</p>
           </a>
-          <a href="/admin/storage" className="glass rounded-3xl p-4 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View proof storage">
-            <Wallet size={22} aria-hidden className="opacity-60" />
-            <p className="mt-1 font-deco text-2xl">{(dash as any)?.proofsToday ?? 0}</p>
+          <a href="/admin/storage" className="glass rounded-2xl p-3 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View proof storage">
+            <Wallet size={20} aria-hidden className="opacity-60" />
+            <p className="mt-1 font-deco text-xl">{(dash as any)?.proofsToday ?? 0}</p>
             <p className="text-sm font-bold">Proofs today →</p>
-            <p className="text-sm opacity-60">{(dash as any)?.unexportedProofs ?? 0} unexported • tap to export</p>
+            <p className="text-xs opacity-60">{(dash as any)?.unexportedProofs ?? 0} unexported • tap to export</p>
           </a>
         </section>
         )}
 
+        {/* today's revenue + sales growth, side by side */}
+        <div className="grid gap-4 lg:grid-cols-2">
         {/* revenue by branch bar viz */}
-        <section aria-label="Revenue by branch" className="glass rounded-3xl p-5 sm:grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section aria-label="Revenue by branch" className="glass rounded-3xl p-5">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> Today&apos;s revenue by branch</h2>
           <div className="mt-3 space-y-2">
             {Object.entries(((dash as any)?.byBranch ?? {}) as Record<string, { orders: number; revenue: number }>).map(([b, v]) => (
@@ -120,7 +122,7 @@ export default function AdminHome() {
         </section>
 
         {/* sales growth */}
-        <section aria-label="Sales growth" className="glass rounded-3xl p-5 sm:grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <section aria-label="Sales growth" className="glass rounded-3xl p-5">
           <div className="flex flex-wrap items-center gap-2">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> Sales growth — paid revenue</h2>
             <div className="ml-auto flex gap-1.5" role="group" aria-label="Range">
@@ -151,10 +153,11 @@ export default function AdminHome() {
                   </span>
                 )}
               </div>
-              <div className="mt-2"><RevenueLine data={t.daily} /><StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} /></div>
+              <div className="mt-2"><RevenueLine data={t.daily} /></div>
             </>
           )}
         </section>
+        </div>
 
         {/* daily bars + payment donut */}
         <div className="grid gap-4 lg:grid-cols-2">
@@ -197,7 +200,13 @@ export default function AdminHome() {
               {trends === undefined ? <SkeletonCards count={1} /> : <TopItems items={t.topItems} />}
             </div>
           </section>
-          <StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} />
+          <section aria-label="Orders by status" className="glass rounded-3xl p-5">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold"><PackageCheck size={20} aria-hidden /> Orders pipeline today</h2>
+            <div className="mt-3">
+              <StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} />
+            </div>
+            <a href="/admin/orders" className="mt-3 inline-block text-sm font-bold underline">Open orders board →</a>
+          </section>
         </div>
       </main>
     </div>
