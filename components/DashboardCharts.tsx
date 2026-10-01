@@ -145,7 +145,7 @@ export function Donut({
 }
 
 /** Order pipeline: horizontal bars per status in flow order. Only shows statuses with orders. */
-export function StatusBars({ byStatus }: { byStatus: Record<string, number> }) {
+export function StatusBars({ byStatus, dayNote = "today's" }: { byStatus: Record<string, number>; dayNote?: string }) {
   const stages: { key: string; label: string; color: string }[] = [
     { key: "placed", label: "Placed", color: "#64748b" },
     { key: "confirmed", label: "Confirmed", color: "#3b82f6" },
@@ -181,7 +181,7 @@ export function StatusBars({ byStatus }: { byStatus: Record<string, number> }) {
           );
         })}
       </ol>
-      <p className="mt-2 text-sm opacity-60">{total} order{total === 1 ? "" : "s"} in today&apos;s pipeline • tap a stage to open it</p>
+      <p className="mt-2 text-sm opacity-60">{total} order{total === 1 ? "" : "s"} in {dayNote} pipeline • tap a stage to open it</p>
     </div>
   );
 }

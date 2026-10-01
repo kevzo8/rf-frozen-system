@@ -6,13 +6,25 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 import {
-  ClipboardList, LogOut,
+  ClipboardList, LogOut, CalendarDays,
   Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp, ShoppingBag,
 } from "lucide-react";
 import { Skeleton, SkeletonCards } from "../../components/Skeleton";
 import { RevenueLine, DailyBars, Donut, TopItems, StatusBars, fmtPeso } from "../../components/DashboardCharts";
 
 export const dynamic = "force-dynamic";
+
+function todayPH() {
+  return new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+function prettyDay(iso: string) {
+  const d = new Date(iso + "T00:00:00+08:00");
+  const t = todayPH();
+  const rel = iso === t ? "today" : iso === new Date(new Date(t + "T00:00:00+08:00").getTime() - 864e5).toISOString().slice(0, 10) ? "yesterday" : null;
+  const label = d.toLocaleDateString("en-PH", { weekday: "short", month: "short", day: "numeric" });
+  return rel ? `${label} (${rel})` : label;
+}
 
 export default function AdminHome() {
   const router = useRouter();
@@ -25,10 +37,12 @@ export default function AdminHome() {
     if (!t) router.push("/admin/login");
   }, [router]);
   const me = useQuery((api as any)?.auth?.me, token ? { token } : "skip");
-  const dash = useQuery((api as any)?.dashboard?.summary, token ? { token } : "skip");
+  const [day, setDay] = useState(todayPH);
+  const dash = useQuery((api as any)?.dashboard?.summary, token ? { token, date: day } : "skip");
   const [days, setDays] = useState(14);
   const trends = useQuery((api as any)?.dashboard?.trends, token ? { token, days } : "skip");
   const logout = useMutation((api as any)?.auth?.logout);
+  const isToday = day === todayPH();
 
   if (!ready) return <main className="p-8 text-base">Loading dashboard...</main>;
   if (!token) return null;
@@ -67,11 +81,34 @@ export default function AdminHome() {
       </header>
 
       <main className="mx-auto max-w-6xl px-5 py-5 space-y-4">
+        {/* day selector */}
+        <div className="flex flex-wrap items-center gap-2">
+          <label className="glass inline-flex min-h-[44px] items-center gap-2 rounded-full px-4 py-2 text-sm font-bold">
+            <CalendarDays size={17} aria-hidden />
+            <span className="sr-only">Dashboard day</span>
+            <input
+              type="date"
+              value={day}
+              max={todayPH()}
+              onChange={(e) => e.target.value && setDay(e.target.value)}
+              className="bg-transparent font-mono text-sm font-bold outline-none"
+              aria-label="Choose dashboard day"
+            />
+          </label>
+          <span className="text-sm font-bold">{prettyDay(day)}</span>
+          {!isToday && (
+            <button onClick={() => setDay(todayPH())} className="inline-flex min-h-[44px] items-center rounded-full border px-4 text-sm font-bold transition hover:scale-[1.02]">
+              Back to today
+            </button>
+          )}
+          <span className="text-xs opacity-60">Glance, branches &amp; pipeline follow this day • charts below stay last {days} days</span>
+        </div>
+
         {/* today at a glance */}
         {dash === undefined ? (
           <SkeletonCards count={4} />
         ) : (
-        <section aria-label="Today at a glance" className="grid grid-cols-2 gap-2 lg:grid-cols-4">
+        <section aria-label={`At a glance for ${day}`} className="grid grid-cols-2 gap-2 lg:grid-cols-4">
           <a href="/admin/reports?tab=cash" className="glass rounded-2xl p-3 border-2 border-emerald-400/50 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View cash report">
             <Banknote size={20} aria-hidden className="text-emerald-600" />
             <p className="mt-1 font-deco text-xl text-emerald-700 dark:text-emerald-300">₱{Number((dash as any)?.revenue ?? 0).toLocaleString()}</p>
@@ -87,13 +124,13 @@ export default function AdminHome() {
           <a href="/admin/orders?status=placed" className="glass rounded-2xl p-3 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View incoming orders">
             <ClipboardList size={20} aria-hidden className="opacity-60" />
             <p className="mt-1 font-deco text-xl">{(dash as any)?.totalToday ?? 0}</p>
-            <p className="text-sm font-bold">Orders today →</p>
+            <p className="text-sm font-bold">Orders {isToday ? "today" : "that day"} →</p>
             <p className="text-xs opacity-60">{(dash as any)?.pending ?? 0} need confirm • tap to check</p>
           </a>
           <a href="/admin/storage" className="glass rounded-2xl p-3 transition hover:scale-[1.02] focus-visible:outline-2" aria-label="View proof storage">
             <Wallet size={20} aria-hidden className="opacity-60" />
             <p className="mt-1 font-deco text-xl">{(dash as any)?.proofsToday ?? 0}</p>
-            <p className="text-sm font-bold">Proofs today →</p>
+            <p className="text-sm font-bold">Proofs {isToday ? "today" : "that day"} →</p>
             <p className="text-xs opacity-60">{(dash as any)?.unexportedProofs ?? 0} unexported • tap to export</p>
           </a>
         </section>
@@ -103,7 +140,7 @@ export default function AdminHome() {
         <div className="grid gap-4 lg:grid-cols-2">
         {/* revenue by branch bar viz */}
         <section aria-label="Revenue by branch" className="glass rounded-3xl p-5">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> Today&apos;s revenue by branch</h2>
+          <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> {isToday ? "Today's" : `${prettyDay(day)}'s`} revenue by branch</h2>
           <div className="mt-3 space-y-2">
             {Object.entries(((dash as any)?.byBranch ?? {}) as Record<string, { orders: number; revenue: number }>).map(([b, v]) => (
               <div key={b} className="flex items-center gap-3">
@@ -116,7 +153,7 @@ export default function AdminHome() {
                 <span className="w-20 text-right text-sm opacity-70">{v.orders} orders</span>
               </div>
             ))}
-            {Object.keys(((dash as any)?.byBranch ?? {})).length === 0 && <p className="flex items-center gap-2 text-sm opacity-60"><Snowflake size={16} aria-hidden /> No orders yet today — place a test order in the shop.</p>}
+            {Object.keys(((dash as any)?.byBranch ?? {})).length === 0 && <p className="flex items-center gap-2 text-sm opacity-60"><Snowflake size={16} aria-hidden /> No orders {isToday ? "yet today — place a test order in the shop." : "on this day."}</p>}
           </div>
           <p className="mt-2 text-sm opacity-60">Price list: {(dash as any)?.priceCount ?? "…"} items • Full breakdown in Reports tab.</p>
         </section>
@@ -199,11 +236,12 @@ export default function AdminHome() {
             <div className="mt-3">
               {trends === undefined ? <SkeletonCards count={1} /> : <TopItems items={t.topItems} />}
             </div>
+            <a href="/admin/prices" className="mt-2 inline-block text-sm font-bold underline">Open price list →</a>
           </section>
           <section aria-label="Orders by status" className="glass rounded-3xl p-5">
-            <h2 className="flex items-center gap-2 font-display text-lg font-bold"><PackageCheck size={20} aria-hidden /> Orders pipeline today</h2>
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold"><PackageCheck size={20} aria-hidden /> Orders pipeline {isToday ? "today" : prettyDay(day)}</h2>
             <div className="mt-3">
-              <StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} />
+              <StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} dayNote={isToday ? "today's" : "this day's"} />
             </div>
             <a href="/admin/orders" className="mt-3 inline-block text-sm font-bold underline">Open orders board →</a>
           </section>
