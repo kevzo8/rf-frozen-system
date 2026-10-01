@@ -61,9 +61,10 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
     <div className="min-h-screen font-body text-slate-800 dark:text-rose-50">
       <header className="glass sticky top-0 z-20 border-b border-white/60">
         <div className="mx-auto max-w-3xl px-5 py-3 flex items-center gap-3">
+          <button onClick={() => window.history.back()} aria-label="Go back" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base font-semibold">← Back</button>
           <img src="/rf-logo.jpg" alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-white" />
-          <p className="font-deco text-slate-900 dark:text-amber-100">RF FROZEN MEAT</p>
-          <div className="ml-auto flex gap-2"><ThemeToggle /><a href="/" className="text-sm glass rounded-full px-4 py-1.5 font-semibold">← Shop</a></div>
+          <p className="font-display font-bold text-slate-900 dark:text-amber-100">RF FROZEN MEAT</p>
+          <div className="ml-auto flex gap-2"><ThemeToggle /><a href="/" className="inline-flex min-h-[44px] items-center text-base glass rounded-full px-4 py-2 font-semibold">Shop</a><a href="/admin/orders" className="hidden sm:inline-flex min-h-[44px] items-center text-base glass rounded-full px-4 py-2 font-semibold">Orders</a></div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-5 py-6 space-y-4">
