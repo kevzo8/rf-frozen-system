@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
 import { Tag, Download, Upload, Pencil } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
+import FileButton from "../../../components/FileButton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +37,7 @@ export default function PricesManager() {
     setEdit(null);
   }
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0];
+  async function importXlsx(f: File | undefined) {
     if (!f || !token) return;
     const ExcelJS = (await import("exceljs")).default;
     const wb = new ExcelJS.Workbook();
@@ -82,7 +82,7 @@ export default function PricesManager() {
       <main className="mx-auto max-w-6xl px-5 py-5">
         <div className="glass rounded-2xl p-4 flex flex-wrap gap-2 items-center text-sm">
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search name, price, or notes..." className="flex-1 rounded-xl border px-3 py-2" />
-          <label className="rounded-xl border px-3 py-2 cursor-pointer">Import xlsx (A=name B=price C=notes)<input type="file" accept=".xlsx" className="hidden" onChange={onFile} /></label>
+          <FileButton label="Import xlsx" accept=".xlsx" onFile={importXlsx} />
         </div>
         <div className="mt-3 glass rounded-2xl overflow-auto" aria-live="polite">
           {prices === undefined ? (

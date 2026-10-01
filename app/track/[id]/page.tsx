@@ -6,6 +6,7 @@ import ThemeToggle from "../../../components/ThemeToggle";
 import { Printer, Upload, ReceiptText, Route, Link2 } from "lucide-react";
 import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
+import FileButton from "../../../components/FileButton";
 
 export const dynamic = "force-dynamic";
 const STEPS = ["placed", "confirmed", "to_pay", "proof_uploaded", "payment_verified", "picking", "checking", "dispatched", "delivered"];
@@ -102,10 +103,10 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
           <h2 className="font-bold text-slate-900">Upload proof of payment</h2>
           <p className="text-xs text-slate-500">GCash / Maya screenshot or photo of cash receipt. Biller verifies after.</p>
           <div className="mt-2 flex flex-wrap gap-2 items-center">
-            <select value={mode} onChange={(e) => setMode(e.target.value)} className="rounded-xl border px-2 py-1.5 text-sm">
+            <select value={mode} onChange={(e) => setMode(e.target.value)} aria-label="Payment mode" className="min-h-[48px] rounded-xl border px-2 py-1.5 text-base">
               {["GCASH", "MAYA", "BDO", "GOTYME", "CASH"].map((m) => <option key={m}>{m}</option>)}
             </select>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] ?? null)} className="text-sm" />
+            <FileButton label="Choose proof photo" accept="image/*" onFile={(f) => setFile(f ?? null)} />
             <button onClick={upload} disabled={busy || !file} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-gradient-to-r from-red-800 to-red-600 px-5 py-2.5 text-base font-bold text-white disabled:opacity-50"><Upload size={18} aria-hidden /> {busy ? "Uploading..." : "Upload proof"}</button>
           </div>
         </div>

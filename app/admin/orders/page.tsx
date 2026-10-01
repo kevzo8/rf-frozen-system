@@ -8,6 +8,7 @@ import ThemeToggle from "../../../components/ThemeToggle";
 import { Check, ReceiptText, ArrowRight, ClipboardList, Wallet, Upload } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
+import FileButton from "../../../components/FileButton";
 import { Suspense } from "react";
 
 export const dynamic = "force-dynamic";
@@ -134,7 +135,7 @@ function OrdersBoardInner() {
               <div className="rounded-xl border border-white/40 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2.5">
                 <p className="flex items-center gap-1.5 text-sm font-bold"><Upload size={16} aria-hidden /> Upload proof for customer</p>
                 <p className="text-xs opacity-70">Customer sent it via Messenger/text? Attach it here — same as their upload.</p>
-                <input type="file" accept="image/*" aria-label="Proof of payment file" onChange={(e) => uploadProofForCustomer(e.target.files?.[0])} className="mt-1.5 w-full text-sm" />
+                <div className="mt-1.5"><FileButton label="Choose proof photo" accept="image/*" onFile={(f) => uploadProofForCustomer(f)} /></div>
                 {proofBusy && <p className="text-sm">Uploading...</p>}
                 {proofMsg && <p className="text-sm font-semibold" role="status">{proofMsg}</p>}
               </div>
