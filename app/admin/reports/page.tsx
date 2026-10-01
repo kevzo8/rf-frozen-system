@@ -5,7 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Download, ChartBar } from "lucide-react";
+import { Download, ChartBar, ShoppingBag } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 import { Suspense } from "react";
 
@@ -77,6 +77,7 @@ function ReportsInner() {
             <input type="date" value={date} onChange={(e) => setDate(e.target.value)} aria-label="Date" className="min-h-[44px] rounded-xl border px-2 py-1.5 text-base" />
             <button onClick={exportXlsx} className="inline-flex min-h-[44px] items-center gap-1.5 rounded-xl bg-slate-900 text-white px-4 py-2 text-base font-bold"><Download size={17} aria-hidden /> Export xlsx</button>
             <ThemeToggle />
+            <a href="/" className="glass inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-base font-semibold"><ShoppingBag size={17} aria-hidden /> Shop</a>
           </div>
         </div>
         <div className="mx-auto max-w-6xl px-5 pb-3 flex gap-2" role="tablist" aria-label="Report type">

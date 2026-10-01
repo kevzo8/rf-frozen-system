@@ -5,7 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { CircleUser, KeyRound, BadgeCheck } from "lucide-react";
+import { CircleUser, KeyRound, BadgeCheck, ShoppingBag } from "lucide-react";
 import { Skeleton } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
@@ -61,7 +61,7 @@ export default function ProfilePage() {
         <div className="mx-auto max-w-3xl px-5 py-3 flex items-center gap-2">
           <a href="/admin" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2">← Dashboard</a>
           <h1 className="flex items-center gap-2 font-display text-lg font-bold"><CircleUser size={20} aria-hidden /> My profile</h1>
-          <div className="ml-auto"><ThemeToggle /></div>
+          <div className="ml-auto flex gap-2 items-center"><ThemeToggle /><a href="/" className="glass inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-base font-semibold"><ShoppingBag size={17} aria-hidden /> Shop</a></div>
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-5 py-5 space-y-4">

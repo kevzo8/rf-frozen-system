@@ -5,7 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Tag, Download, Upload, Pencil } from "lucide-react";
+import { Tag, Download, Upload, Pencil, ShoppingBag } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 import FileButton from "../../../components/FileButton";
 
@@ -76,7 +76,7 @@ export default function PricesManager() {
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2">
           <a href="/admin" className="glass rounded-full px-3 py-1 text-sm">← Admin</a>
           <h1 className="font-display font-bold">Prices — name / price / notes</h1>
-          <div className="ml-auto flex gap-2"><button onClick={exportXlsx} className="rounded-xl border px-3 py-1.5 text-sm">Export xlsx</button><ThemeToggle /></div>
+          <div className="ml-auto flex gap-2"><button onClick={exportXlsx} className="rounded-xl border px-3 py-1.5 text-sm">Export xlsx</button><ThemeToggle /><a href="/" className="glass inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold"><ShoppingBag size={16} aria-hidden /> Shop</a></div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-5">

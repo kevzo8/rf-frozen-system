@@ -5,7 +5,7 @@ import { getToken, clearToken } from "../../../lib/auth-token";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Users, UserPlus, ShieldCheck, Store } from "lucide-react";
+import { Users, UserPlus, ShieldCheck, Store, ShoppingBag } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
@@ -69,7 +69,7 @@ export default function UsersPage() {
         <div className="mx-auto max-w-5xl px-5 py-3 flex items-center gap-2">
           <a href="/admin" className="glass rounded-full px-4 py-2 min-h-[44px] inline-flex items-center">← Dashboard</a>
           <h1 className="flex items-center gap-2 font-display text-lg font-bold"><Users size={20} aria-hidden /> Staff accounts</h1>
-          <div className="ml-auto"><ThemeToggle /></div>
+          <div className="ml-auto flex gap-2 items-center"><ThemeToggle /><a href="/" className="glass inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-base font-semibold"><ShoppingBag size={17} aria-hidden /> Shop</a></div>
         </div>
       </header>
       <main className="mx-auto max-w-5xl px-5 py-5 grid gap-4 lg:grid-cols-[1fr_1.4fr]">

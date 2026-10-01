@@ -119,6 +119,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           qtyBox: it.qtyBox ?? 0,
           weightKg: it.weightKg ?? 0,
           price: it.finalPrice ?? it.estPrice ?? 0,
+          boxWeights: Array.isArray(it.boxWeights) ? it.boxWeights : [],
         }))
       );
       setWeighError("");
@@ -147,6 +148,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           qtyBox: Math.max(0, Math.floor(Number(w.qtyBox) || 0)),
           weightKg: Math.max(0, Number(w.weightKg) || 0),
           price: Math.max(0, Number(w.price) || 0),
+          boxWeights: Array.isArray(w.boxWeights) ? w.boxWeights : [],
         })),
       });
       if (res?.finalTotal != null) {
@@ -190,6 +192,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           qtyBox: Math.max(0, Math.floor(Number(w.qtyBox) || 0)),
           weightKg: Math.max(0, Number(w.weightKg) || 0),
           price: Math.max(0, Number(w.price) || 0),
+          boxWeights: Array.isArray(w.box) ? w.box : [],
         })),
       });
       if (res?.finalTotal != null) {
@@ -201,6 +204,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
           qtyBox: Math.max(0, Math.floor(Number(w.qtyBox) || 0)),
           weightKg: Math.max(0, Number(w.weightKg) || 0),
           price: Math.max(0, Number(w.price) || 0),
+          boxWeights: Array.isArray(w.box) ? w.box : [],
         }))
       );
     } catch (e: any) {
@@ -426,6 +430,7 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
               <h2 className="flex items-center gap-2 font-display text-base font-bold text-slate-900 dark:text-amber-50">
                 <Scale size={18} aria-hidden /> Weights & prices <span className="text-xs font-body font-normal text-slate-500">— per kilo, amount = kg × price</span>
               </h2>
+              <p className="mt-1 text-xs text-slate-500 dark:text-rose-100/60">Tip: for per-box breakdowns use the tally grid on the sheets below — its totals override these boxes/kilos.</p>
               <div className="mt-4 space-y-2">
                 {weights.map((w: any, i: number) => (
                   <div key={`${w.productName}-${i}`} className="rounded-2xl bg-white/70 p-3 dark:bg-white/5">
@@ -668,7 +673,14 @@ export default function OrderDetail({ params }: { params: Promise<{ id: string }
               Click any highlighted cell to edit — OS#, date, address, lines, signatures. Saving writes back to this order.
             </p>
             <div className="mt-3 overflow-x-auto">
-              <SheetReceipt order={order} editable saving={sheetSaving} saveError={sheetError} onSave={saveSheet} />
+              <SheetReceipt
+                order={order}
+                editable
+                saving={sheetSaving}
+                saveError={sheetError}
+                onSave={saveSheet}
+                qrValue={typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}
+              />
             </div>
           </section>
           </>

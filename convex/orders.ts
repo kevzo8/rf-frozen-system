@@ -158,6 +158,7 @@ export const setWeights = mutation({
       qtyBox: v.number(),
       weightKg: v.number(),
       price: v.number(),
+      boxWeights: v.optional(v.array(v.union(v.number(), v.null()))),
     })),
   },
   handler: async (ctx, args) => {
@@ -171,11 +172,27 @@ export const setWeights = mutation({
     const patched = args.items.map((it) => {
       const name = it.productName.trim();
       if (!name) throw new Error("Item name required");
-      const qtyBox = Math.max(0, Math.floor(Number(it.qtyBox) || 0));
-      const weightKg = Math.max(0, Number(it.weightKg) || 0);
       const price = Math.max(0, Number(it.price) || 0);
+      // Per-box tally wins when it has entries: boxes = count of filled cells, kilos = their sum.
+      const bw = (it.boxWeights ?? []).map((v) => (v === null || v === undefined || isNaN(Number(v)) ? null : Math.max(0, Number(v))));
+      const entries = bw.filter((v) => v !== null) as number[];
+      let qtyBox: number;
+      let weightKg: number;
+      let boxWeights: (number | null)[] | undefined;
+      if (entries.length > 0) {
+        // Trim trailing empties so the stored array stays tidy.
+        let end = bw.length;
+        while (end > 0 && bw[end - 1] === null) end--;
+        boxWeights = bw.slice(0, Math.max(end, 1));
+        qtyBox = entries.length;
+        weightKg = entries.reduce((s, v) => s + v, 0);
+      } else {
+        qtyBox = Math.max(0, Math.floor(Number(it.qtyBox) || 0));
+        weightKg = Math.max(0, Number(it.weightKg) || 0);
+        boxWeights = undefined;
+      }
       finalTotal += weightKg * price;
-      return { productName: name, qtyBox, estPrice: price, weightKg, finalPrice: price };
+      return { productName: name, qtyBox, estPrice: price, weightKg, finalPrice: price, ...(boxWeights !== undefined ? { boxWeights } : {}) };
     });
     await ctx.db.patch(o._id, { items: patched, finalTotal: Math.round(finalTotal * 100) / 100 });
     return { finalTotal: Math.round(finalTotal * 100) / 100 };

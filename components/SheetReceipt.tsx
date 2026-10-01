@@ -1,11 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 
 export type SheetLine = {
   productName: string;
   qtyBox: number;
   weightKg: number;
   price: number;
+  /** Per-box kilo entries (tally grid column). null = empty cell. */
+  box: (number | null)[];
 };
 
 export type SheetDraft = {
@@ -15,6 +18,8 @@ export type SheetDraft = {
   deliveredTo: string; // override; falls back to company/contact
   address: string;
   lines: SheetLine[];
+  /** Tally grid row count (min 12 like the paper sheet). */
+  rows: number;
   preparedBy: string;
   checkedBy: string;
   deliveredBy: string;
@@ -28,6 +33,7 @@ type SheetItem = {
   weightKg: number;
   price: number;
   amount: number;
+  box: (number | null)[];
 };
 
 function fmt(n: number, d = 2) {
@@ -71,19 +77,38 @@ function itemOf(name: string) {
   return parts.length > 1 ? parts.slice(0, -1).join("-").trim() : String(name).trim();
 }
 
+function normBox(v: any): number | null {
+  if (v === null || v === undefined || v === "") return null;
+  const n = Number(v);
+  return isNaN(n) ? null : Math.max(0, n);
+}
+
+/** Effective boxes/kilos for a line: tally column wins when it has entries, else manual values. */
+export function effLine(l: { qtyBox: number; weightKg: number; price: number; box?: (number | null)[] }) {
+  const entries = (l.box ?? []).filter((v) => v !== null && !isNaN(Number(v))).map((v) => Number(v));
+  const qtyBox = entries.length > 0 ? entries.length : Number(l.qtyBox) || 0;
+  const weightKg = entries.length > 0 ? entries.reduce((s, v) => s + v, 0) : Number(l.weightKg) || 0;
+  const price = Number(l.price) || 0;
+  return { qtyBox, weightKg, price, amount: weightKg * price, tallyCount: entries.length };
+}
+
 export function draftFromOrder(order: any): SheetDraft {
+  const lines = ((order?.items ?? []) as any[]).map((it: any) => ({
+    productName: it.productName,
+    qtyBox: it.qtyBox ?? 0,
+    weightKg: it.weightKg ?? 0,
+    price: it.finalPrice ?? it.estPrice ?? 0,
+    box: Array.isArray(it.boxWeights) ? it.boxWeights.map(normBox) : [],
+  }));
+  const longest = lines.reduce((m: number, l: any) => Math.max(m, l.box.length), 0);
   return {
     osNo: order?.osNo ?? "",
     invoiceNo: order?.invoiceNo ?? "",
     receiptDate: toISODate(order?.receiptDate ?? order?.createdAt ?? Date.now()),
     deliveredTo: order?.deliveredTo ?? "",
     address: order?.address ?? "",
-    lines: ((order?.items ?? []) as any[]).map((it: any) => ({
-      productName: it.productName,
-      qtyBox: it.qtyBox ?? 0,
-      weightKg: it.weightKg ?? 0,
-      price: it.finalPrice ?? it.estPrice ?? 0,
-    })),
+    lines,
+    rows: Math.max(12, longest),
     preparedBy: order?.preparedBy ?? "",
     checkedBy: order?.checkedBy ?? "",
     deliveredBy: order?.deliveredBy ?? "",
@@ -93,25 +118,29 @@ export function draftFromOrder(order: any): SheetDraft {
 }
 
 export function draftTotals(d: SheetDraft) {
-  const boxes = d.lines.reduce((s, l) => s + (Number(l.qtyBox) || 0), 0);
-  const kgs = d.lines.reduce((s, l) => s + (Number(l.weightKg) || 0), 0);
-  const total = d.lines.reduce((s, l) => s + (Number(l.weightKg) || 0) * (Number(l.price) || 0), 0);
+  const e = d.lines.map(effLine);
+  const boxes = e.reduce((s, l) => s + l.qtyBox, 0);
+  const kgs = e.reduce((s, l) => s + l.weightKg, 0);
+  const total = e.reduce((s, l) => s + l.amount, 0);
   return { boxes, kgs, total };
 }
 
-export function orderLines(order: any): { lines: SheetItem[]; boxes: number; kgs: number; total: number } {
+export function orderLines(order: any): { lines: SheetItem[]; boxes: number; kgs: number; total: number; rows: number } {
   const items: any[] = order?.items ?? [];
   const lines = items.map((it: any) => {
     const price = Number(it.finalPrice ?? it.estPrice ?? 0);
     const kg = Number(it.weightKg ?? 0);
     const boxes = Number(it.qtyBox ?? 0);
-    return { productName: it.productName, qtyBox: boxes, weightKg: kg, price, amount: kg * price };
+    const box = Array.isArray(it.boxWeights) ? it.boxWeights.map(normBox) : [];
+    return { productName: it.productName, qtyBox: boxes, weightKg: kg, price, amount: kg * price, box };
   });
+  const rows = Math.max(12, lines.reduce((m, l) => Math.max(m, l.box.length), 0));
   return {
     lines,
     boxes: lines.reduce((s, l) => s + l.qtyBox, 0),
     kgs: lines.reduce((s, l) => s + l.weightKg, 0),
     total: lines.reduce((s, l) => s + l.amount, 0),
+    rows,
   };
 }
 
@@ -162,9 +191,24 @@ export async function exportSheetsXlsx(order: any) {
     ]);
     const h = ws.rowCount + 1;
     ws.addRow(["ITEM", "BRAND", "TOTAL BOX", "TOTAL KGS"]);
-    d.lines.forEach((l) => ws.addRow([itemOf(l.productName), brandOf(l.productName), Number(l.qtyBox) || 0, Number(l.weightKg) || 0]));
+    d.lines.forEach((l) => {
+      const e = effLine(l);
+      ws.addRow([itemOf(l.productName), brandOf(l.productName), e.qtyBox, Number(e.weightKg.toFixed(2))]);
+    });
     ws.addRow(["GRAND TOTAL", "", fmtInt(t.boxes), Number(t.kgs.toFixed(2))]);
     styleTable(ws, h, d.lines.length + 2, 4);
+    ws.addRow([]);
+    ws.addRow(["TALLY (kilos per box)"]);
+    const th = ws.rowCount + 1;
+    ws.addRow(["#", ...d.lines.map((l) => itemOf(l.productName) || "ITEM")]);
+    const nRows = Math.max(d.rows, 12);
+    for (let r = 0; r < nRows; r++) {
+      ws.addRow([r + 1, ...d.lines.map((l) => {
+        const v = l.box?.[r] ?? null;
+        return v === null ? "" : Number(v.toFixed(2));
+      })]);
+    }
+    styleTable(ws, th, nRows + 1, d.lines.length + 1);
     ws.addRow([]);
     ws.addRow([`Prepared By: ${d.preparedBy}`, `Checked By: ${d.checkedBy}`, `Noted By (Operations Supervisor):`]);
     ws.addRow(["THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES"]);
@@ -179,9 +223,10 @@ export async function exportSheetsXlsx(order: any) {
     ]);
     const h = ws.rowCount + 1;
     ws.addRow(["QTY (boxes)", "DESCRIPTION", "WEIGHT (kg)", "PRICE", "AMOUNT"]);
-    d.lines.forEach((l) =>
-      ws.addRow([Number(l.qtyBox) || 0, l.productName, Number(l.weightKg) || 0, Number(l.price) || 0, (Number(l.weightKg) || 0) * (Number(l.price) || 0)])
-    );
+    d.lines.forEach((l) => {
+      const e = effLine(l);
+      ws.addRow([e.qtyBox, l.productName, Number(e.weightKg.toFixed(2)), Number(e.price.toFixed(2)), Number(e.amount.toFixed(2))]);
+    });
     ws.addRow([fmtInt(t.boxes), "TOTAL", Number(t.kgs.toFixed(2)), "", Number(t.total.toFixed(2))]);
     styleTable(ws, h, d.lines.length + 2, 5);
     for (let r = h + 1; r < h + 1 + d.lines.length + 1; r++) {
@@ -204,9 +249,10 @@ export async function exportSheetsXlsx(order: any) {
     ]);
     const h = ws.rowCount + 1;
     ws.addRow(["QTY (boxes)", "DESCRIPTION", "WEIGHT (kg)", "PRICE", "AMOUNT"]);
-    d.lines.forEach((l) =>
-      ws.addRow([Number(l.qtyBox) || 0, l.productName, Number(l.weightKg) || 0, Number(l.price) || 0, (Number(l.weightKg) || 0) * (Number(l.price) || 0)])
-    );
+    d.lines.forEach((l) => {
+      const e = effLine(l);
+      ws.addRow([e.qtyBox, l.productName, Number(e.weightKg.toFixed(2)), Number(e.price.toFixed(2)), Number(e.amount.toFixed(2))]);
+    });
     ws.addRow([fmtInt(t.boxes), "TOTAL", Number(t.kgs.toFixed(2)), "", Number(t.total.toFixed(2))]);
     styleTable(ws, h, d.lines.length + 2, 5);
     for (let r = h + 1; r < h + 1 + d.lines.length + 1; r++) {
@@ -246,14 +292,29 @@ function EText({
   );
 }
 
+function SheetHead({ children, qrValue }: { children: React.ReactNode; qrValue: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+      <div style={{ flex: 1, minWidth: 0 }}>{children}</div>
+      {qrValue ? (
+        <div className="c" style={{ flexShrink: 0 }}>
+          <QRCodeSVG value={qrValue} size={68} />
+          <div style={{ fontSize: 8, fontWeight: 800 }}>SCAN TO TRACK</div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function SheetReceipt({
-  order, editable = false, saving = false, saveError = "", onSave,
+  order, editable = false, saving = false, saveError = "", onSave, qrValue = "",
 }: {
   order: any;
   editable?: boolean;
   saving?: boolean;
   saveError?: string;
   onSave?: (draft: SheetDraft) => Promise<void>;
+  qrValue?: string;
 }) {
   const [draft, setDraft] = useState<SheetDraft>(() => draftFromOrder(order));
   const [dirty, setDirty] = useState(false);
@@ -279,32 +340,63 @@ export default function SheetReceipt({
     setDraft((p) => ({ ...p, lines: p.lines.map((l, j) => (j === i ? { ...l, ...patch } : l)) }));
     setDirty(true);
   };
+  const setBox = (i: number, r: number, raw: string) => {
+    const v = raw === "" ? null : normBox(raw);
+    setDraft((p) => ({
+      ...p,
+      lines: p.lines.map((l, j) => {
+        if (j !== i) return l;
+        const box = [...l.box];
+        while (box.length <= r) box.push(null);
+        box[r] = v;
+        return { ...l, box };
+      }),
+    }));
+    setDirty(true);
+  };
   const addLine = () => {
-    setDraft((p) => ({ ...p, lines: [...p.lines, { productName: "", qtyBox: 0, weightKg: 0, price: 0 }] }));
+    setDraft((p) => ({ ...p, lines: [...p.lines, { productName: "", qtyBox: 0, weightKg: 0, price: 0, box: [] }] }));
     setDirty(true);
   };
   const removeLine = (i: number) => {
     setDraft((p) => ({ ...p, lines: p.lines.filter((_, j) => j !== i) }));
     setDirty(true);
   };
+  const addRow = () => {
+    setDraft((p) => ({ ...p, rows: p.rows + 1 }));
+    setDirty(true);
+  };
+  const removeRow = () => {
+    setDraft((p) => ({ ...p, rows: Math.max(1, p.rows - 1) }));
+    setDirty(true);
+  };
+  const resetDraft = () => {
+    setDraft(draftFromOrder(order));
+    setDirty(false);
+    setLocalError("");
+  };
 
   const view = editable
-    ? {
-        osNo: draft.osNo, invoiceNo: draft.invoiceNo,
-        dateLabel: labelFromISO(draft.receiptDate, order?.createdAt ?? Date.now()),
-        deliveredTo: (draft.deliveredTo || String(order?.customerName || "")).toUpperCase(),
-        contact: String(order?.contactName || order?.customerName || "").toUpperCase(),
-        mobile: order?.mobile ?? "-",
-        address: draft.address,
-        branch: String(order?.branch || "").toUpperCase(),
-        trackingId: order?.trackingId,
-        lines: draft.lines.map((l) => ({ ...l, amount: (Number(l.weightKg) || 0) * (Number(l.price) || 0) })),
-        boxes: draft.lines.reduce((s, l) => s + (Number(l.qtyBox) || 0), 0),
-        kgs: draft.lines.reduce((s, l) => s + (Number(l.weightKg) || 0), 0),
-        total: draft.lines.reduce((s, l) => s + (Number(l.weightKg) || 0) * (Number(l.price) || 0), 0),
-      }
+    ? (() => {
+        const eff = draft.lines.map((l) => ({ ...l, ...effLine(l) }));
+        return {
+          osNo: draft.osNo, invoiceNo: draft.invoiceNo,
+          dateLabel: labelFromISO(draft.receiptDate, order?.createdAt ?? Date.now()),
+          deliveredTo: (draft.deliveredTo || String(order?.customerName || "")).toUpperCase(),
+          contact: String(order?.contactName || order?.customerName || "").toUpperCase(),
+          mobile: order?.mobile ?? "-",
+          address: draft.address,
+          branch: String(order?.branch || "").toUpperCase(),
+          trackingId: order?.trackingId,
+          lines: eff,
+          boxes: eff.reduce((s, l) => s + l.qtyBox, 0),
+          kgs: eff.reduce((s, l) => s + l.weightKg, 0),
+          total: eff.reduce((s, l) => s + l.amount, 0),
+          rows: draft.rows,
+        };
+      })()
     : (() => {
-        const { lines, boxes, kgs, total } = orderLines(order);
+        const { lines, boxes, kgs, total, rows } = orderLines(order);
         return {
           osNo: order?.osNo ?? "", invoiceNo: order?.invoiceNo ?? "",
           dateLabel: labelFromISO(toISODate(order?.receiptDate ?? order?.createdAt ?? Date.now()), order?.createdAt ?? Date.now()),
@@ -314,11 +406,9 @@ export default function SheetReceipt({
           address: String(order?.address || ""),
           branch: String(order?.branch || "").toUpperCase(),
           trackingId: order?.trackingId,
-          lines, boxes, kgs, total,
+          lines, boxes, kgs, total, rows,
         };
       })();
-
-  const tallyRows = 12;
 
   const doSave = async () => {
     setLocalError("");
@@ -345,6 +435,7 @@ export default function SheetReceipt({
         weightKg: l.weightKg,
         estPrice: l.price,
         finalPrice: l.price,
+        boxWeights: l.box,
       })),
       preparedBy: draft.preparedBy,
       checkedBy: draft.checkedBy,
@@ -401,6 +492,7 @@ export default function SheetReceipt({
         <div className="no-print mb-2 flex flex-wrap items-center gap-2 rounded-2xl border border-amber-300/60 bg-amber-50 px-3 py-2 text-sm dark:bg-amber-950/30" style={{ color: "#111" }}>
           <span className="font-bold">Editing receipts — click any highlighted cell, then save.</span>
           <span className="ml-auto flex gap-2">
+            <button type="button" onClick={resetDraft} disabled={!dirty} className="mini-btn">Reset</button>
             <button type="button" onClick={doExport} className="mini-btn">Export xlsx</button>
             <button type="button" onClick={doSave} disabled={saving || !dirty} className="mini-btn primary">
               {saving ? "Saving…" : dirty ? "Save sheet changes" : "Saved"}
@@ -412,8 +504,10 @@ export default function SheetReceipt({
 
       {/* SHEET 1 — PICKLIST TALLY SHEET */}
       <div className="sheet break p-3">
-        <div className="c b" style={{ fontSize: 14 }}>RF FROZEN MEAT CORP — {view.branch}</div>
-        <div className="c b" style={{ fontSize: 13 }}>PICKLIST TALLY SHEET</div>
+        <SheetHead qrValue={qrValue}>
+          <div className="c b" style={{ fontSize: 14 }}>RF FROZEN MEAT CORP — {view.branch}</div>
+          <div className="c b" style={{ fontSize: 13 }}>PICKLIST TALLY SHEET</div>
+        </SheetHead>
         <table className="mt-2">
           <tbody>
             <tr>
@@ -439,7 +533,7 @@ export default function SheetReceipt({
           </tbody>
         </table>
 
-        <p className="b mt-2">TALLY SHEET (CATHWEIGHT BREAKDOWN — kilos per box, write actuals)</p>
+        <p className="b mt-2">TALLY SHEET (CATHWEIGHT BREAKDOWN — type kilos per box below; totals compute automatically)</p>
         <div style={{ overflowX: "auto" }}>
           <table>
             <thead>
@@ -462,25 +556,35 @@ export default function SheetReceipt({
               <tr>
                 <td className="b c">TOTAL BOX</td>
                 {view.lines.map((l, i) => (
-                  <td key={i} className="c b">{editable ? (
-                    <input type="number" min={0} step={1} value={draft.lines[i]?.qtyBox ?? 0} onChange={(e) => setLine(i, { qtyBox: Number(e.target.value) })} className="editcell c font-mono" />
-                  ) : fmtInt(l.qtyBox)}</td>
+                  <td key={i} className="c b">{fmtInt(l.qtyBox)}</td>
                 ))}
               </tr>
               <tr>
                 <td className="b c">TOTAL KGS</td>
                 {view.lines.map((l, i) => (
-                  <td key={i} className="c b">{editable ? (
-                    <input type="number" min={0} step="0.01" value={draft.lines[i]?.weightKg ?? 0} onChange={(e) => setLine(i, { weightKg: Number(e.target.value) })} className="editcell c font-mono" />
-                  ) : fmt(l.weightKg)}</td>
+                  <td key={i} className="c b">{fmt(l.weightKg)}</td>
                 ))}
               </tr>
-              {Array.from({ length: tallyRows }).map((_, r) => (
+              {Array.from({ length: view.rows }).map((_, r) => (
                 <tr key={r}>
                   <td className="c">{r + 1}</td>
-                  {view.lines.map((_, i) => (
-                    <td key={i}>&nbsp;</td>
-                  ))}
+                  {view.lines.map((l, i) => {
+                    const v = editable
+                      ? draft.lines[i]?.box?.[r] ?? null
+                      : (l as any).box?.[r] ?? null;
+                    return (
+                      <td key={i} className="c">{editable ? (
+                        <input
+                          type="number" min={0} step="0.01"
+                          value={v === null ? "" : v}
+                          placeholder="—"
+                          onChange={(e) => setBox(i, r, e.target.value)}
+                          className="editcell c font-mono"
+                          aria-label={`Box ${r + 1} kilos for ${draft.lines[i]?.productName || `item ${i + 1}`}`}
+                        />
+                      ) : v === null ? <>&nbsp;</> : fmt(v)}</td>
+                    );
+                  })}
                 </tr>
               ))}
               <tr>
@@ -491,7 +595,12 @@ export default function SheetReceipt({
           </table>
         </div>
         {editable && (
-          <div className="no-print mt-2 flex gap-2">
+          <div className="no-print mt-2 flex flex-wrap gap-2">
+            <button type="button" onClick={addRow} className="mini-btn">+ Add tally row</button>
+            {draft.rows > 1 && (
+              <button type="button" onClick={removeRow} className="mini-btn">− Remove last row</button>
+            )}
+            <span className="mx-1 text-slate-400">|</span>
             <button type="button" onClick={addLine} className="mini-btn">+ Add line</button>
             {draft.lines.length > 0 && (
               <button type="button" onClick={() => removeLine(draft.lines.length - 1)} className="mini-btn">− Remove last line</button>
@@ -517,8 +626,10 @@ export default function SheetReceipt({
 
       {/* SHEET 2 — DELIVERY RECEIPT */}
       <div className="sheet break p-3">
-        <div className="c b" style={{ fontSize: 14 }}>DELIVERY RECEIPT</div>
-        <div className="c">RF FROZEN MEAT CORP — {view.branch}</div>
+        <SheetHead qrValue={qrValue}>
+          <div className="c b" style={{ fontSize: 14 }}>DELIVERY RECEIPT</div>
+          <div className="c">RF FROZEN MEAT CORP — {view.branch}</div>
+        </SheetHead>
         <table className="mt-2">
           <tbody>
             <tr>
@@ -550,15 +661,11 @@ export default function SheetReceipt({
           <tbody>
             {view.lines.map((l, i) => (
               <tr key={i}>
-                <td className="c">{editable ? (
-                  <input type="number" min={0} step={1} value={draft.lines[i]?.qtyBox ?? 0} onChange={(e) => setLine(i, { qtyBox: Number(e.target.value) })} className="editcell c font-mono" />
-                ) : fmtInt(l.qtyBox)}</td>
+                <td className="c">{fmtInt(l.qtyBox)}</td>
                 <td>{editable ? (
                   <input type="text" value={draft.lines[i]?.productName ?? ""} onChange={(e) => setLine(i, { productName: e.target.value })} className="editcell" placeholder="Item - brand" />
                 ) : l.productName}</td>
-                <td className="r">{editable ? (
-                  <input type="number" min={0} step="0.01" value={draft.lines[i]?.weightKg ?? 0} onChange={(e) => setLine(i, { weightKg: Number(e.target.value) })} className="editcell r font-mono" />
-                ) : fmt(l.weightKg)}</td>
+                <td className="r">{fmt(l.weightKg)}</td>
                 <td className="r">{editable ? (
                   <input type="number" min={0} step="0.01" value={draft.lines[i]?.price ?? 0} onChange={(e) => setLine(i, { price: Number(e.target.value) })} className="editcell r font-mono" />
                 ) : fmt(l.price)}</td>
@@ -579,7 +686,10 @@ export default function SheetReceipt({
           </tbody>
         </table>
         {editable && (
-          <div className="no-print mt-2"><button type="button" onClick={addLine} className="mini-btn">+ Add line</button></div>
+          <div className="no-print mt-2 flex flex-wrap items-center gap-2">
+            <button type="button" onClick={addLine} className="mini-btn">+ Add line</button>
+            <span style={{ fontSize: 11 }}>Boxes & kilos come from the tally grid above — type per-box kilos there.</span>
+          </div>
         )}
 
         <table className="mt-2">
@@ -610,8 +720,10 @@ export default function SheetReceipt({
 
       {/* SHEET 3 — RF DELIVERIES */}
       <div className="sheet p-3">
-        <div className="c b" style={{ fontSize: 14 }}>RF DELIVERIES</div>
-        <div className="c">RF FROZEN MEAT CORP — {view.branch} • {view.dateLabel}</div>
+        <SheetHead qrValue={qrValue}>
+          <div className="c b" style={{ fontSize: 14 }}>RF DELIVERIES</div>
+          <div className="c">RF FROZEN MEAT CORP — {view.branch} • {view.dateLabel}</div>
+        </SheetHead>
         <table className="mt-2">
           <tbody>
             <tr>

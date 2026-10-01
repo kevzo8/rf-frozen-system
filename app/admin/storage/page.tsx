@@ -5,7 +5,7 @@ import { getToken } from "../../../lib/auth-token";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import ThemeToggle from "../../../components/ThemeToggle";
-import { Check, FolderOpen, Download, Trash2 } from "lucide-react";
+import { Check, FolderOpen, Download, Trash2, ShoppingBag } from "lucide-react";
 import { SkeletonLines } from "../../../components/Skeleton";
 
 export const dynamic = "force-dynamic";
@@ -66,7 +66,7 @@ export default function StorageManager() {
         <div className="mx-auto max-w-6xl px-5 py-3 flex items-center gap-2">
           <a href="/admin" className="glass inline-flex min-h-[44px] items-center rounded-full px-4 py-2 text-base">← Admin</a>
           <h1 className="flex items-center gap-2 font-display text-lg font-bold"><FolderOpen size={20} aria-hidden /> Storage — export then purge</h1>
-          <div className="ml-auto"><ThemeToggle /></div>
+          <div className="ml-auto flex gap-2 items-center"><ThemeToggle /><a href="/" className="glass inline-flex min-h-[44px] items-center gap-1.5 rounded-full px-4 py-2 text-base font-semibold"><ShoppingBag size={17} aria-hidden /> Shop</a></div>
         </div>
       </header>
       <main className="mx-auto max-w-6xl px-5 py-5">

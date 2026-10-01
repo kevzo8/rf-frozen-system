@@ -7,6 +7,7 @@ import { Printer, Upload, X, Trash2, ReceiptText, Route, Link2 } from "lucide-re
 import { Skeleton, SkeletonLines } from "../../../components/Skeleton";
 import LifecycleGuide from "../../../components/LifecycleGuide";
 import SheetReceipt, { exportSheetsXlsx } from "../../../components/SheetReceipt";
+import { QRCodeSVG } from "qrcode.react";
 
 export const dynamic = "force-dynamic";
 
@@ -24,6 +25,9 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
 
   const proofs: any[] = (order as any)?.proofs ?? [];
   const existing = proofs[0] ?? null;
+  const trackUrl = typeof window !== "undefined" && order
+    ? `${window.location.origin}/track/${order.trackingId}`
+    : order ? `/track/${order.trackingId}` : "";
 
   useEffect(() => {
     if (!file) { setPreview(null); return; }
@@ -103,7 +107,8 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
 
             <div className="glass rounded-3xl p-6">
               <h2 className="flex items-center gap-2 font-bold"><ReceiptText size={18} aria-hidden /> Receipt — print / screenshot this</h2>
-              <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800">
+              <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800 flex gap-4">
+                <div className="min-w-0 flex-1">
                 <p className="font-black">RF FROZEN MEAT CORP — {order.branch.toUpperCase()}</p>
                 <p>OS: {order.osNo ?? "-"} | INV: {order.invoiceNo ?? "-"} | {order.trackingId}</p>
                 <p>CONTACT NAME: <b>{String(order.contactName ?? order.customerName).toUpperCase()}</b></p>
@@ -123,6 +128,13 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
                   return <li key={i}>{it.productName} — {it.qtyBox} box(es){kg > 0 ? ` • ${Number(kg).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} kg` : ""} @ ₱{price}/kg = ₱{Number(amt).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</li>;
                 })}</ul>
                 <p className="mt-1 text-[11px] text-slate-500">Sold by weight — amount = kilos × price. THIS DOCUMENT IS NOT VALID FOR CLAIM OF INPUT TAXES</p>
+                </div>
+                {trackUrl && (
+                  <div className="shrink-0 self-start rounded-xl border bg-white p-1.5 text-center">
+                    <QRCodeSVG value={trackUrl} size={104} aria-label={`QR code for ${order.trackingId}`} />
+                    <p className="mt-0.5 text-[10px] font-bold text-slate-600">SCAN TO TRACK</p>
+                  </div>
+                )}
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button onClick={() => window.print()} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print receipt</button>
@@ -134,7 +146,7 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
               <h2 className="flex items-center gap-2 font-bold"><ReceiptText size={18} aria-hidden /> Tally + delivery sheets</h2>
               <p className="text-xs text-slate-500">Picklist tally, delivery receipt, and RF deliveries — with kilo totals. Prints on 3 pages.</p>
               <div className="mt-3 overflow-x-auto">
-                <SheetReceipt order={order} />
+                <SheetReceipt order={order} qrValue={trackUrl} />
               </div>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button onClick={() => window.print()} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 px-5 py-2.5 text-base font-semibold text-white"><Printer size={18} aria-hidden /> Print all 3 sheets</button>

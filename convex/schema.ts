@@ -55,7 +55,7 @@ export default defineSchema({
       v.literal("dispatched"), v.literal("delivered"),
       v.literal("cancelled"), v.literal("returned")
     ),
-    items: v.array(v.object({ productName: v.string(), qtyBox: v.number(), estPrice: v.number(), weightKg: v.optional(v.number()), finalPrice: v.optional(v.number()) })),
+    items: v.array(v.object({ productName: v.string(), qtyBox: v.number(), estPrice: v.number(), weightKg: v.optional(v.number()), finalPrice: v.optional(v.number()), boxWeights: v.optional(v.array(v.union(v.number(), v.null()))) })),
     estimateTotal: v.number(),
     finalTotal: v.optional(v.number()),
     osNo: v.optional(v.string()), // RF55xxx

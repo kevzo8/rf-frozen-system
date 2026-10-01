@@ -6,21 +6,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import ThemeToggle from "../../components/ThemeToggle";
 import {
-  ClipboardList, Tag, ChartBar, FolderOpen, Users, LogOut,
-  Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp, CircleUser, ShoppingBag,
+  ClipboardList, LogOut,
+  Banknote, Hourglass, Wallet, PackageCheck, Snowflake, TrendingUp, ShoppingBag,
 } from "lucide-react";
 import { Skeleton, SkeletonCards } from "../../components/Skeleton";
+import { RevenueLine, DailyBars, Donut, TopItems, StatusBars, fmtPeso } from "../../components/DashboardCharts";
 
 export const dynamic = "force-dynamic";
-
-const NAV = [
-  { href: "/admin/orders", icon: ClipboardList, title: "Orders board", desc: "Confirm, bill, verify, dispatch" },
-  { href: "/admin/prices", icon: Tag, title: "Prices", desc: "Edit + xlsx 3-col import" },
-  { href: "/admin/reports", icon: ChartBar, title: "Reports", desc: "Cash • Sales • Credit • Receipt" },
-  { href: "/admin/storage", icon: FolderOpen, title: "Storage", desc: "Export zip + purge" },
-  { href: "/admin/profile", icon: CircleUser, title: "My profile", desc: "My details + password" },
-  { href: "/admin/users", icon: Users, title: "Staff", desc: "Accounts (admin only)", adminOnly: true },
-];
 
 export default function AdminHome() {
   const router = useRouter();
@@ -34,12 +26,17 @@ export default function AdminHome() {
   }, [router]);
   const me = useQuery((api as any)?.auth?.me, token ? { token } : "skip");
   const dash = useQuery((api as any)?.dashboard?.summary, token ? { token } : "skip");
+  const [days, setDays] = useState(14);
+  const trends = useQuery((api as any)?.dashboard?.trends, token ? { token, days } : "skip");
   const logout = useMutation((api as any)?.auth?.logout);
 
   if (!ready) return <main className="p-8 text-base">Loading dashboard...</main>;
   if (!token) return null;
 
   const role = (me as any)?.role;
+  const t = trends as any;
+  const growth = t?.totals?.growthPct as number | null;
+  const modeTotal = (t?.byMode?.cash ?? 0) + (t?.byMode?.gcash ?? 0) + (t?.byMode?.bank ?? 0) + (t?.byMode?.unset ?? 0);
   const maxBranch = Math.max(1, ...Object.values(((dash as any)?.byBranch ?? {}) as Record<string, { revenue: number }>).map((b: any) => b.revenue));
 
   async function doLogout() {
@@ -103,7 +100,7 @@ export default function AdminHome() {
         )}
 
         {/* revenue by branch bar viz */}
-        <section aria-label="Revenue by branch" className="glass rounded-3xl p-5">
+        <section aria-label="Revenue by branch" className="glass rounded-3xl p-5 sm:grid grid-cols-1 lg:grid-cols-2 gap-4">
           <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> Today&apos;s revenue by branch</h2>
           <div className="mt-3 space-y-2">
             {Object.entries(((dash as any)?.byBranch ?? {}) as Record<string, { orders: number; revenue: number }>).map(([b, v]) => (
@@ -122,27 +119,86 @@ export default function AdminHome() {
           <p className="mt-2 text-sm opacity-60">Price list: {(dash as any)?.priceCount ?? "…"} items • Full breakdown in Reports tab.</p>
         </section>
 
-        {/* order status viz */}
-        <section aria-label="Orders by status" className="glass rounded-3xl p-5">
-          <h2 className="flex items-center gap-2 font-display text-lg font-bold"><PackageCheck size={20} aria-hidden /> Orders by status today</h2>
-          <div className="mt-3 flex flex-wrap gap-2">
-            {Object.entries(((dash as any)?.byStatus ?? {}) as Record<string, number>).map(([s, n]) => (
-              <span key={s} className="inline-flex min-h-[44px] items-center rounded-full bg-slate-900 dark:bg-amber-200 dark:text-red-950 px-4 text-base font-semibold text-white">{s}: {n}</span>
-            ))}
-            {Object.keys(((dash as any)?.byStatus ?? {})).length === 0 && <p className="text-sm opacity-60">Nothing yet.</p>}
+        {/* sales growth */}
+        <section aria-label="Sales growth" className="glass rounded-3xl p-5 sm:grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold"><TrendingUp size={20} aria-hidden /> Sales growth — paid revenue</h2>
+            <div className="ml-auto flex gap-1.5" role="group" aria-label="Range">
+              {[7, 14, 30].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => setDays(d)}
+                  aria-pressed={days === d}
+                  className={`min-h-[40px] rounded-full px-4 text-sm font-bold transition ${days === d ? "bg-slate-900 text-white dark:bg-amber-200 dark:text-red-950" : "glass"}`}
+                >
+                  {d}d
+                </button>
+              ))}
+            </div>
           </div>
+          {trends === undefined ? (
+            <div className="mt-3"><SkeletonCards count={1} /></div>
+          ) : (
+            <>
+              <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-sm">
+                <span>Total <b className="font-mono text-base">{fmtPeso(t.totals.revenue)}</b></span>
+                <span className="opacity-70">{t.totals.orders} orders • avg <b className="font-mono">{fmtPeso(t.totals.revenue / Math.max(1, days))}</b>/day</span>
+                {growth === null ? (
+                  <span className="rounded-full bg-slate-900/10 px-2.5 py-0.5 text-xs font-bold dark:bg-white/10">no prior data yet</span>
+                ) : (
+                  <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${growth >= 0 ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-rose-500/15 text-rose-700 dark:text-rose-300"}`}>
+                    {growth >= 0 ? "▲" : "▼"} {Math.abs(growth)}% vs prior {days}d
+                  </span>
+                )}
+              </div>
+              <div className="mt-2"><RevenueLine data={t.daily} /><StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} /></div>
+            </>
+          )}
         </section>
 
-        {/* nav */}
-        <nav aria-label="Staff sections" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {NAV.filter((n) => !(n as any).adminOnly || role === "admin").map((n) => (
-            <a key={n.href} href={n.href} className="glass group rounded-3xl p-5 transition hover:scale-[1.02] focus-visible:outline-2">
-              <n.icon size={26} aria-hidden className="opacity-70 transition group-hover:scale-110" />
-              <p className="mt-2 text-lg font-bold">{n.title}</p>
-              <p className="text-sm opacity-60">{n.desc}</p>
-            </a>
-          ))}
-        </nav>
+        {/* daily bars + payment donut */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section aria-label="Daily paid versus to-collect" className="glass rounded-3xl p-5">
+            <h2 className="font-display text-lg font-bold">Paid vs to-collect per day</h2>
+            <p className="text-sm opacity-60">Green = money in hand • Amber = still to collect</p>
+            <div className="mt-2">
+              {trends === undefined ? <SkeletonCards count={1} /> : <DailyBars data={t.daily} />}
+            </div>
+            <a href="/admin/reports?tab=credit" className="mt-2 inline-block text-sm font-bold underline">Open credit report →</a>
+          </section>
+          <section aria-label="Payment mode split" className="glass rounded-3xl p-5">
+            <h2 className="flex items-center gap-2 font-display text-lg font-bold"><Wallet size={20} aria-hidden /> How customers pay</h2>
+            <p className="text-sm opacity-60">Share of paid revenue, last {days} days</p>
+            <div className="mt-3">
+              {trends === undefined ? <SkeletonCards count={1} /> : (
+                <Donut
+                  segments={[
+                    { label: "Cash", value: t.byMode.cash, color: "#10b981" },
+                    { label: "GCash / Maya", value: t.byMode.gcash, color: "#0ea5e9" },
+                    { label: "Bank transfer", value: t.byMode.bank, color: "#8b5cf6" },
+                    { label: "No mode set", value: t.byMode.unset, color: "#94a3b8" },
+                  ]}
+                  total={modeTotal}
+                  centerTop={fmtPeso(modeTotal)}
+                  centerBottom="paid"
+                />
+              )}
+            </div>
+            <a href="/admin/reports?tab=cash" className="mt-2 inline-block text-sm font-bold underline">Open cash report →</a>
+          </section>
+        </div>
+
+        {/* top products + status */}
+        <div className="grid gap-4 lg:grid-cols-2">
+          <section aria-label="Top products" className="glass rounded-3xl p-5">
+            <h2 className="font-display text-lg font-bold">Top products by revenue</h2>
+            <p className="text-sm opacity-60">Last {days} days • amount = kilos × price</p>
+            <div className="mt-3">
+              {trends === undefined ? <SkeletonCards count={1} /> : <TopItems items={t.topItems} />}
+            </div>
+          </section>
+          <StatusBars byStatus={((dash as any)?.byStatus ?? {}) as Record<string, number>} />
+        </div>
       </main>
     </div>
   );
