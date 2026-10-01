@@ -108,6 +108,19 @@ export const setActive = mutation({
   },
 });
 
+export const setDisplayName = mutation({
+  args: { token: v.string(), username: v.string(), displayName: v.string() },
+  handler: async (ctx, args) => {
+    await requireAdmin(ctx, args.token);
+    const d = args.displayName.trim();
+    if (d.length < 2) throw new Error("Display name too short");
+    const u = await ctx.db.query("users").withIndex("by_username", (q) => q.eq("username", args.username.trim().toLowerCase())).unique();
+    if (!u) throw new Error("User not found");
+    await ctx.db.patch(u._id, { displayName: d });
+    return true;
+  },
+});
+
 export const listUsers = query({
   args: { token: v.string() },
   handler: async (ctx, args) => {

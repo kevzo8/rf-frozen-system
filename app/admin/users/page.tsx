@@ -26,6 +26,7 @@ export default function UsersPage() {
   const createUser = useMutation((api as any)?.auth?.createUser);
   const setActive = useMutation((api as any)?.auth?.setActive);
   const resetPw = useMutation((api as any)?.auth?.resetPassword);
+  const setName = useMutation((api as any)?.auth?.setDisplayName);
   const [f, setF] = useState({ username: "", password: "", role: "biller", branch: "stamesa", displayName: "" });
   const [msg, setMsg] = useState("");
 
@@ -87,6 +88,7 @@ export default function UsersPage() {
                   <p className="text-sm opacity-70">{u.role} • {u.branch} • {u.active ? "active" : "disabled"}</p>
                 </div>
                 <button onClick={async () => { const np = prompt(`New password for ${u.username}`); if (np) { await (resetPw as any)({ token, username: u.username, newPassword: np }); alert("Reset done"); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Reset PW</button>
+                <button onClick={async () => { const nn = prompt(`Display name for ${u.username}`, u.displayName); if (nn) { await (setName as any)({ token, username: u.username, displayName: nn }); } }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">Edit name</button>
                 <button onClick={async () => { await (setActive as any)({ token, username: u.username, active: !u.active }); }} className="min-h-[44px] rounded-xl border px-3 text-sm font-semibold">{u.active ? "Disable" : "Enable"}</button>
               </li>
             ))}
