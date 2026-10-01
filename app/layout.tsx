@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Cinzel, Cinzel_Decorative, Poppins, Roboto_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "../components/ConvexClientProvider";
+import ThemeInitScript from "../components/ThemeInitScript";
 
 const cinzel = Cinzel({ variable: "--font-display", subsets: ["latin"], weight: ["500", "700", "900"] });
 const cinzelDeco = Cinzel_Decorative({ variable: "--font-deco", subsets: ["latin"], weight: ["700", "900"] });
@@ -17,7 +18,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" suppressHydrationWarning className={`${cinzel.variable} ${cinzelDeco.variable} ${poppins.variable} ${robotoMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col font-body">
-        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('rf-theme');if(t==='dark'||(!t&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}})` }} />
+        <ThemeInitScript />
         <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>

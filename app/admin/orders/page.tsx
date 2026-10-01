@@ -110,6 +110,7 @@ function OrdersBoardInner() {
                 {o.status === "checking" && <button onClick={() => advance(o.trackingId, "dispatched")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base font-semibold">Dispatched <ArrowRight size={16} aria-hidden /></button>}
                 {o.status === "dispatched" && <button onClick={() => advance(o.trackingId, "delivered")} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-emerald-600 text-white px-4 py-2 text-base font-semibold"><Check size={17} aria-hidden /> Delivered</button>}
                 <a href={`/track/${o.trackingId}`} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl border px-4 py-2 text-base underline"><ReceiptText size={17} aria-hidden /> Receipt</a>
+                <a href={`/admin/orders/${o.trackingId}`} className="inline-flex min-h-[44px] items-center gap-1 rounded-xl bg-blue-600 text-white px-4 py-2 text-base font-semibold"><Upload size={17} aria-hidden /> Edit</a>
               </div>
             </div>
             );

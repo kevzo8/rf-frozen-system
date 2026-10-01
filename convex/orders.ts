@@ -82,6 +82,57 @@ export const deleteProof = mutation({
   },
 });
 
+export const getById = query({
+  args: { token: v.string(), id: v.string() },
+  handler: async (ctx, args) => {
+    const u: any = await requireStaff(ctx, args.token);
+    const o = await ctx.db.query("orders").withIndex("by_tracking", (q) => q.eq("trackingId", args.id.trim().toLowerCase())).unique();
+    if (!o) return null;
+    if (u.branch !== "all" && o.branch !== u.branch) throw new Error("Wrong branch");
+    const proofs = await ctx.db.query("proofs").withIndex("by_tracking", (q) => q.eq("trackingId", o.trackingId)).collect();
+    const withUrl = await Promise.all(proofs.map(async (p) => ({ id: p._id, fileId: p.fileId, fileName: p.fileName, uploadedAt: p.uploadedAt, url: await ctx.storage.getUrl(p.fileId) })));
+    withUrl.sort((a, b) => b.uploadedAt - a.uploadedAt);
+    return { ...o, proofs: withUrl };
+  },
+});
+
+export const updateOrder = mutation({
+  args: {
+    token: v.string(),
+    trackingId: v.string(),
+    customerName: v.optional(v.string()),
+    contactName: v.optional(v.string()),
+    companyName: v.optional(v.string()),
+    mobile: v.optional(v.string()),
+    branch: v.optional(v.string()),
+    fulfillment: v.optional(v.union(v.literal("pickup"), v.literal("delivery"))),
+    osNo: v.optional(v.string()),
+    invoiceNo: v.optional(v.string()),
+    finalTotal: v.optional(v.number()),
+    paymentMode: v.optional(v.string()),
+  },
+  handler: async (ctx, args) => {
+    const u: any = await requireStaff(ctx, args.token);
+    const tid = args.trackingId.trim().toLowerCase();
+    const o = await ctx.db.query("orders").withIndex("by_tracking", (q) => q.eq("trackingId", tid)).unique();
+    if (!o) throw new Error("Not found");
+    if (u.branch !== "all" && o.branch !== u.branch) throw new Error("Wrong branch");
+    const patch: any = {};
+    if (args.customerName !== undefined) patch.customerName = args.customerName;
+    if (args.contactName !== undefined) patch.contactName = args.contactName;
+    if (args.companyName !== undefined) patch.companyName = args.companyName;
+    if (args.mobile !== undefined) patch.mobile = args.mobile;
+    if (args.branch !== undefined) patch.branch = args.branch;
+    if (args.fulfillment !== undefined) patch.fulfillment = args.fulfillment;
+    if (args.osNo !== undefined) patch.osNo = args.osNo;
+    if (args.invoiceNo !== undefined) patch.invoiceNo = args.invoiceNo;
+    if (args.finalTotal !== undefined) patch.finalTotal = args.finalTotal;
+    if (args.paymentMode !== undefined) patch.paymentMode = args.paymentMode;
+    await ctx.db.patch(o._id, patch);
+    return true;
+  },
+});
+
 async function requireStaff(ctx: any, token: string) {
   const s = await ctx.db.query("sessions").withIndex("by_token", (q: any) => q.eq("token", token)).unique();
   if (!s || s.expiresAt < Date.now()) throw new Error("Not logged in");
