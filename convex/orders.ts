@@ -62,7 +62,23 @@ export const getByTracking = query({
     const o = await ctx.db.query("orders").withIndex("by_tracking", (q) => q.eq("trackingId", tid)).unique();
     if (!o) return null;
     const proofs = await ctx.db.query("proofs").withIndex("by_tracking", (q) => q.eq("trackingId", tid)).collect();
-    return { ...o, proofs: proofs.map((p) => ({ fileId: p.fileId, fileName: p.fileName, uploadedAt: p.uploadedAt })) };
+    const withUrl = await Promise.all(proofs.map(async (p) => ({ id: p._id, fileId: p.fileId, fileName: p.fileName, uploadedAt: p.uploadedAt, url: await ctx.storage.getUrl(p.fileId) })));
+    withUrl.sort((a, b) => b.uploadedAt - a.uploadedAt);
+    return { ...o, proofs: withUrl };
+  },
+});
+
+export const deleteProof = mutation({
+  args: { trackingId: v.string(), proofId: v.id("proofs") },
+  handler: async (ctx, args) => {
+    const tid = args.trackingId.trim().toLowerCase();
+    const p = await ctx.db.get(args.proofId);
+    if (!p || p.trackingId !== tid) throw new Error("Proof not found");
+    const o = await ctx.db.query("orders").withIndex("by_tracking", (q) => q.eq("trackingId", tid)).unique();
+    await ctx.storage.delete(p.fileId);
+    await ctx.db.delete(p._id);
+    if (o && o.status === "proof_uploaded") await ctx.db.patch(o._id, { status: "to_pay" });
+    return true;
   },
 });
 
