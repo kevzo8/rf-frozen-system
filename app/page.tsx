@@ -8,6 +8,7 @@ import {
   Store, Tag, TriangleAlert, ArrowRight, CircleCheck, Info, ClipboardList,
   Bike, History,
 } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { SkeletonLines } from "../components/Skeleton";
 import LifecycleGuide from "../components/LifecycleGuide";
 
@@ -72,7 +73,11 @@ export default function Shop() {
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"name" | "low" | "high">("name");
   const [cart, setCart] = useState<{ productName: string; qtyBox: number }[]>([]);
-  const [done, setDone] = useState<{ trackingId: string; estimateTotal: number } | null>(null);
+  const [done, setDone] = useState<{
+    trackingId: string; estimateTotal: number; link: string; qr: string;
+    name: string; company: string; mobile: string; branch: string; fulfillment: string;
+    items: { productName: string; qtyBox: number; price: number }[];
+  } | null>(null);
   const [placing, setPlacing] = useState(false);
   const [track, setTrack] = useState("");
   const [lookup, setLookup] = useState<any>(null);
@@ -137,10 +142,15 @@ export default function Shop() {
     setMissing(null);
     setPlacing(true);
     try {
+      // snapshot for the confirmation card + QR (cart clears after)
+      const snapItems = cart.map((c) => ({ productName: c.productName, qtyBox: c.qtyBox, price: Number(priceMap.get(c.productName)) || 0 }));
       const res = await (placeOrder as any)({ branch, customerName: name, contactName: name, companyName: company || undefined, fulfillment, mobile, address: fulfillment === "delivery" ? address : undefined, items: cart });
-      setDone(res);
+      const link = `${window.location.origin}/track/${res.trackingId}`;
+      const qr = JSON.stringify({ t: res.trackingId, u: link, n: name.trim(), c: company.trim(), m: mobile.trim(), b: branch, f: fulfillment, items: snapItems.map((i) => [i.productName, i.qtyBox]), e: res.estimateTotal });
+      setDone({ trackingId: res.trackingId, estimateTotal: res.estimateTotal, link, qr, name: name.trim(), company: company.trim(), mobile: mobile.trim(), branch, fulfillment, items: snapItems });
       rememberClient(res.trackingId, res.estimateTotal);
       setCart([]);
+      setTimeout(() => document.getElementById("order-done")?.scrollIntoView({ behavior: "smooth", block: "center" }), 100);
     } finally {
       setPlacing(false);
     }
@@ -394,9 +404,28 @@ export default function Shop() {
                 <ShoppingCart size={20} aria-hidden /> {placing ? "Placing..." : "Place order — get tracking number"}
               </button>
               {done && (
-                <div className="anim-fade-up mt-2 flex items-start gap-2 rounded-xl bg-emerald-400/20 border border-emerald-300/30 p-3 text-base">
-                  <CircleCheck size={20} aria-hidden className="mt-0.5 shrink-0" />
-                  <p>Tracking: <a className="font-mono font-bold underline" href={`/track/${done.trackingId}`}>{done.trackingId}</a> — save this!</p>
+                <div id="order-done" className="anim-fade-up mt-3 rounded-xl bg-white/95 dark:bg-black/40 border border-emerald-300/40 p-4 text-slate-900 dark:text-amber-50 scroll-mt-32">
+                  <p className="flex items-center gap-2 text-sm font-bold uppercase tracking-widest text-emerald-700 dark:text-emerald-300"><CircleCheck size={18} aria-hidden /> Order confirmed</p>
+                  <div className="mt-2 flex flex-col sm:flex-row gap-3">
+                    <div className="shrink-0 rounded-xl bg-white p-2 self-start">
+                      <QRCodeSVG value={done.qr} size={140} aria-label={`QR code for ${done.trackingId}`} />
+                    </div>
+                    <div className="min-w-0 flex-1 text-sm">
+                      <p className="font-mono text-base font-black">{done.trackingId}</p>
+                      <p className="font-bold uppercase">{done.company || done.name} • {done.branch} • {done.fulfillment}</p>
+                      <p className="opacity-70">{done.name}{done.company ? ` • ${done.mobile}` : ` • ${done.mobile}`}</p>
+                      <ul className="mt-1">
+                        {done.items.map((i, k) => <li key={k}>{i.productName} × {i.qtyBox} @ ₱{i.price} = ₱{(i.price * i.qtyBox).toLocaleString()}</li>)}
+                      </ul>
+                      <p className="mt-1 font-deco text-xl">₱{done.estimateTotal.toLocaleString()} <span className="font-body text-xs opacity-60">estimate — final after biller confirms</span></p>
+                      <p className="mt-1 break-all text-xs opacity-60">QR holds: tracking link, name, company, mobile, branch, fulfillment, items, estimate.</p>
+                    </div>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    <a href={`/track/${done.trackingId}`} className="inline-flex min-h-[48px] items-center gap-1.5 rounded-xl bg-slate-900 dark:bg-amber-200 dark:text-red-950 px-5 py-2 text-base font-bold text-white">Track + upload proof <ArrowRight size={17} aria-hidden /></a>
+                    <button type="button" onClick={() => { navigator.clipboard?.writeText(done.trackingId); }} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base font-semibold">Copy tracking #</button>
+                    <button type="button" onClick={() => setDone(null)} className="inline-flex min-h-[48px] items-center rounded-xl border px-4 py-2 text-base">New order</button>
+                  </div>
                 </div>
               )}
             </div>
