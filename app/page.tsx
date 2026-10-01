@@ -112,7 +112,7 @@ export default function Shop() {
 
   function scrollToOrder(e?: React.MouseEvent) {
     e?.preventDefault();
-    const el = document.getElementById("order");
+    const el = document.getElementById("order-disclaimer") ?? document.getElementById("order");
     if (!el) return;
     const top = el.getBoundingClientRect().top + window.scrollY - 96;
     window.scrollTo({ top, behavior: "smooth" });
@@ -157,7 +157,8 @@ export default function Shop() {
               <p className="mt-3 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-300">
                 From Belly Biso to CLQ Wings — order like Shopee. No login. Get a tracking number, pay via GCash / Maya / BDO / GoTyme / Cash, upload proof, we deliver.
               </p>
-              <div className="mt-4 flex flex-wrap gap-2" role="group" aria-label="Choose branch">
+              <p className="mt-4 font-display text-sm font-bold uppercase tracking-[0.2em] text-slate-700 dark:text-amber-100/80">Select branch and place your order</p>
+              <div className="mt-2 flex flex-wrap gap-2" role="group" aria-label="Choose branch">
                 {BRANCHES.map((b) => (
                   <button key={b.id} onClick={() => setBranch(b.id)} aria-pressed={branch === b.id}
                     className={`min-h-[44px] rounded-full px-4 py-2 text-base font-semibold transition hover:scale-105 focus-visible:outline-2 ${branch === b.id ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
@@ -183,7 +184,7 @@ export default function Shop() {
             </div>
           </div>
         </div>
-        <div className="anim-fade-up mt-3 flex gap-2 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-50/90 to-orange-50/80 dark:from-amber-950/60 dark:to-red-950/40 px-4 py-3 text-sm text-amber-950 dark:text-amber-100 backdrop-blur" style={{ animationDelay: "0.15s" }}>
+        <div id="order-disclaimer" className="anim-fade-up mt-3 flex gap-2 rounded-2xl border border-amber-300/60 bg-gradient-to-r from-amber-50/90 to-orange-50/80 dark:from-amber-950/60 dark:to-red-950/40 px-4 py-3 text-sm text-amber-950 dark:text-amber-100 backdrop-blur scroll-mt-32" style={{ animationDelay: "0.15s" }}>
           <TriangleAlert size={18} aria-hidden className="mt-0.5 shrink-0" />
           <p><b>Disclaimer:</b> Prices are estimates only from the latest update — final payable after biller confirms availability. Check notes on each item for availability.</p>
         </div>
@@ -194,7 +195,7 @@ export default function Shop() {
           <h2 className="flex items-center gap-2 font-display text-xl font-bold tracking-wide pt-1"><ClipboardList size={20} aria-hidden /> 1 • Your details <span className="text-sm font-body font-normal text-slate-500">— no login needed</span></h2>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="sm:col-span-2 text-sm font-semibold uppercase tracking-widest opacity-70">
-              Branch — synced with hero above
+              Selected branch
               <select value={branch} onChange={(e) => setBranch(e.target.value)} aria-label="Branch"
                 className="mt-1 min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base font-semibold outline-none focus:ring-2 focus:ring-red-400">
                 {BRANCHES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
