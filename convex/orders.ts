@@ -14,10 +14,22 @@ export const placeOrder = mutation({
   args: {
     branch: v.string(), customerName: v.string(), mobile: v.optional(v.string()),
     address: v.optional(v.string()), items: v.array(v.object({ productName: v.string(), qtyBox: v.number() })),
+    contactName: v.optional(v.string()), companyName: v.optional(v.string()),
+    fulfillment: v.optional(v.union(v.literal("pickup"), v.literal("delivery"))),
   },
   handler: async (ctx, args) => {
     const branch = args.branch.trim().toLowerCase();
-    if (!args.customerName.trim()) throw new Error("Name required");
+    const contact = (args.contactName ?? args.customerName).trim().replace(/\s+/g, " ");
+    const company = (args.companyName ?? "").trim().replace(/\s+/g, " ");
+    // Receipt name: company if given, else contact person — always ALL CAPS
+    const display = (company || contact || args.customerName).trim().replace(/\s+/g, " ").toUpperCase();
+    const key = display.toLowerCase();
+    if (!contact) throw new Error("Contact person required");
+    const mobile = (args.mobile ?? "").trim();
+    if (!mobile) throw new Error("Mobile number required");
+    const fulfillment = args.fulfillment ?? "delivery";
+    const address = (args.address ?? "").trim();
+    if (fulfillment === "delivery" && !address) throw new Error("Delivery address required");
     if (args.items.length === 0) throw new Error("Add at least 1 item");
     const date = todayManila();
     let counter = await ctx.db.query("counters").withIndex("by_branch_date", (q) => q.eq("branch", branch).eq("date", date)).unique();
@@ -34,7 +46,9 @@ export const placeOrder = mutation({
       priced.push({ productName: it.productName, qtyBox: it.qtyBox, estPrice: p?.price ?? 0 });
     }
     await ctx.db.insert("orders", {
-      trackingId, branch, customerName: args.customerName.trim(), mobile: args.mobile, address: args.address,
+      trackingId, branch, customerName: display, customerKey: key,
+      contactName: contact.toUpperCase(), companyName: company ? company.toUpperCase() : undefined,
+      fulfillment, mobile, address: fulfillment === "delivery" ? address : `PICKUP - ${branch.toUpperCase()} BRANCH`,
       status: "placed", items: priced, estimateTotal, createdAt: Date.now(),
     });
     return { trackingId, estimateTotal };

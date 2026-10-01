@@ -70,7 +70,7 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
       <main className="mx-auto max-w-3xl px-5 py-6 space-y-4">
         <div className="glass-strong rounded-3xl p-6">
           <p className="font-mono text-sm text-slate-500">{order.trackingId}</p>
-          <h1 className="text-xl font-black text-slate-900">{order.customerName} • {order.branch}</h1>
+          <h1 className="text-xl font-black uppercase text-slate-900">{order.customerName} • {order.branch}</h1>
           <p className="text-base">Payable: <b className="text-lg">₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b> • {order.paymentMode ?? "waiting for biller confirmation"}</p>
           <h2 className="mt-4 flex items-center gap-2 font-display text-base font-bold tracking-wide"><Route size={18} aria-hidden /> Where is my order?</h2>
           <div className="mt-2"><LifecycleGuide current={order.status} /></div>
@@ -80,6 +80,7 @@ export default function TrackPage({ params }: { params: Promise<{ id: string }> 
           <div className="mt-2 rounded-2xl bg-white/90 border p-4 text-sm text-slate-800">
             <p className="font-black">RF FROZEN MEAT CORP — {order.branch.toUpperCase()}</p>
             <p>OS: {order.osNo ?? "-"} | INV: {order.invoiceNo ?? "-"} | {order.trackingId}</p>
+            <p>RECEIPT NAME: <b>{String(order.customerName).toUpperCase()}</b>{order.contactName ? ` • CONTACT: ${String(order.contactName).toUpperCase()}` : ""} • {order.fulfillment === "pickup" ? "PICKUP" : "DELIVERY"}</p>
             <p>Status: <b>{order.status}</b> • Payable: <b>₱{(order.finalTotal ?? order.estimateTotal).toLocaleString()}</b></p>
             <p className="mt-1 break-all">Track anytime: <span className="font-mono">{typeof window !== "undefined" ? `${window.location.origin}/track/${order.trackingId}` : `/track/${order.trackingId}`}</span></p>
             <ul className="mt-1">{order.items.map((it: any, i: number) => <li key={i}>{it.productName} × {it.qtyBox} @ ₱{it.estPrice}</li>)}</ul>

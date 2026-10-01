@@ -22,8 +22,8 @@ Seed: PRICE UPDATE 9/29 list (disclaimer: example only, changes daily by supply/
 Admin: edit name+price+notes, upload xlsx with 3 columns (A=name, B=price, C=notes e.g. "parating pa lang mamaya" - notes optional, leave blank if none). Timestamp + by whom. Customer sees estimate + notes badge + disclaimer subject to availability.
 
 ## Customer portal `/` (no login)
-Inputs: name, mobile, address, branch, items (searchable dropdown from ITEM LIST ~1000 SKUs), qty boxes.
-Estimate only. Submit -> tracking ID. Later: check tracking -> final payable -> upload proof (GCash/Maya screenshot or cash receipt photo) -> download receipt.
+Inputs: contact person full name*, company name (receipt name if given), required mobile, branch, pickup (branch name shown, exact address later) or delivery (address required), items searchable by name/price/notes, qty in units.
+Names normalized (collapsed spaces, ALL CAPS receipt, lowercase dedupe key). Client + order history saved on-device for smart suggest. Estimate only. Submit -> tracking ID. Later: check tracking -> final payable -> upload proof -> download receipt.
 
 ## Payments (placeholders)
 GCash-Reagan, Maya-Reagan, BDO RF Frozen 000218035456, GoTyme-Reagan. Replace with real numbers + QR later.

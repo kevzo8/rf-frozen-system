@@ -1,11 +1,12 @@
 "use client";
 import { useQuery, useMutation } from "convex/react";
 import { api } from "../convex/_generated/api";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import ThemeToggle from "../components/ThemeToggle";
 import {
   Snowflake, ShoppingCart, Search, Plus, X, ReceiptText, PackageSearch,
   Store, Tag, TriangleAlert, ArrowRight, CircleCheck, Info, ClipboardList,
+  Bike, History,
 } from "lucide-react";
 import { SkeletonLines } from "../components/Skeleton";
 import LifecycleGuide from "../components/LifecycleGuide";
@@ -32,8 +33,36 @@ export default function Shop() {
   const placeOrder = useMutation((api as any)?.orders?.placeOrder);
   const [branch, setBranch] = useState("stamesa");
   const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
   const [mobile, setMobile] = useState("");
   const [address, setAddress] = useState("");
+  const [fulfillment, setFulfillment] = useState<"pickup" | "delivery">("delivery");
+  const [savedClients, setSavedClients] = useState<{ name: string; company: string; mobile: string; address: string; branch: string }[]>([]);
+  const [myHistory, setMyHistory] = useState<{ trackingId: string; total: number; date: string; branch: string }[]>([]);
+
+  useEffect(() => {
+    try {
+      setSavedClients(JSON.parse(localStorage.getItem("rf_clients") ?? "[]"));
+      setMyHistory(JSON.parse(localStorage.getItem("rf_history") ?? "[]"));
+    } catch {}
+  }, []);
+
+  function rememberClient(trackingId: string, total: number) {
+    try {
+      const clients = JSON.parse(localStorage.getItem("rf_clients") ?? "[]");
+      const entry = { name: name.trim(), company: company.trim(), mobile: mobile.trim(), address: address.trim(), branch };
+      const rest = clients.filter((c: any) => c.name.toLowerCase() !== entry.name.toLowerCase() || c.mobile !== entry.mobile);
+      localStorage.setItem("rf_clients", JSON.stringify([entry, ...rest].slice(0, 20)));
+      const hist = JSON.parse(localStorage.getItem("rf_history") ?? "[]");
+      localStorage.setItem("rf_history", JSON.stringify([{ trackingId, total, date: new Date().toISOString().slice(0, 10), branch }, ...hist].slice(0, 20)));
+      setSavedClients([entry, ...rest].slice(0, 20));
+    } catch {}
+  }
+
+  function fillClient(c: { name: string; company: string; mobile: string; address: string; branch: string }) {
+    setName(c.name); setCompany(c.company); setMobile(c.mobile); setAddress(c.address); setBranch(c.branch);
+    setMissing(null);
+  }
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState<"name" | "low" | "high">("name");
   const [cart, setCart] = useState<{ productName: string; qtyBox: number }[]>([]);
@@ -67,7 +96,7 @@ export default function Shop() {
   const priceMap = useMemo(() => new Map(((prices ?? []) as any[]).map((p: any) => [p.productName, p.price])), [prices]);
   const est = cart.reduce((s, c) => s + (Number(priceMap.get(c.productName)) || 0) * c.qtyBox, 0);
   const unitCount = cart.reduce((s, c) => s + c.qtyBox, 0);
-  const [missing, setMissing] = useState<"name" | "items" | null>(null);
+  const [missing, setMissing] = useState<string | null>(null);
 
   function scrollToId(id: string) {
     const el = document.getElementById(id);
@@ -84,6 +113,16 @@ export default function Shop() {
       scrollToId("order-name");
       return;
     }
+    if (!mobile.trim()) {
+      setMissing("mobile" as any);
+      scrollToId("order-mobile");
+      return;
+    }
+    if (fulfillment === "delivery" && !address.trim()) {
+      setMissing("address" as any);
+      scrollToId("order-address");
+      return;
+    }
     if (cart.length === 0) {
       setMissing("items");
       scrollToId("order-items");
@@ -92,8 +131,9 @@ export default function Shop() {
     setMissing(null);
     setPlacing(true);
     try {
-      const res = await (placeOrder as any)({ branch, customerName: name, mobile, address, items: cart });
+      const res = await (placeOrder as any)({ branch, customerName: name, contactName: name, companyName: company || undefined, fulfillment, mobile, address: fulfillment === "delivery" ? address : undefined, items: cart });
       setDone(res);
+      rememberClient(res.trackingId, res.estimateTotal);
       setCart([]);
     } finally {
       setPlacing(false);
@@ -152,7 +192,7 @@ export default function Shop() {
                 <Snowflake size={15} aria-hidden /> Fresh-frozen daily • Sta Mesa pilot
               </span>
               <h1 className="font-deco mt-3 text-4xl md:text-5xl leading-tight text-slate-900 dark:text-amber-50">
-                Meaty goodness,<br /><span className="shimmer-text font-black">frosted fresh.</span>
+                Meaty goodness,<br /><span className="shimmer-text font-black">frozen fresh.</span>
               </h1>
               <p className="mt-3 max-w-md text-base leading-relaxed text-slate-600 dark:text-slate-300">
                 From Belly Biso to CLQ Wings — order like Shopee. No login. Get a tracking number, pay via GCash / Maya / BDO / GoTyme / Cash, upload proof, we deliver.
@@ -193,6 +233,17 @@ export default function Shop() {
       <main className="mx-auto max-w-6xl px-5 pb-16 pt-5 grid gap-5 lg:grid-cols-[1.4fr_1fr]">
         <section id="order" aria-label="Order form" className="glass anim-fade-up rounded-[1.75rem] p-6 scroll-mt-32" style={{ animationDelay: "0.2s" }}>
           <h2 className="flex items-center gap-2 font-display text-xl font-bold tracking-wide pt-1"><ClipboardList size={20} aria-hidden /> 1 • Your details <span className="text-sm font-body font-normal text-slate-500">— no login needed</span></h2>
+          {/* pickup / delivery */}
+          <div className="mt-3 grid grid-cols-2 gap-2" role="group" aria-label="Pickup or delivery">
+            <button type="button" onClick={() => setFulfillment("pickup")} aria-pressed={fulfillment === "pickup"}
+              className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-base font-bold transition focus-visible:outline-2 ${fulfillment === "pickup" ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
+              <Store size={19} aria-hidden /> Pickup
+            </button>
+            <button type="button" onClick={() => setFulfillment("delivery")} aria-pressed={fulfillment === "delivery"}
+              className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-2xl text-base font-bold transition focus-visible:outline-2 ${fulfillment === "delivery" ? "bg-gradient-to-r from-red-900 to-red-600 text-white shadow-lg" : "glass"}`}>
+              <Bike size={19} aria-hidden /> Delivery
+            </button>
+          </div>
           <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="sm:col-span-2 text-sm font-semibold uppercase tracking-widest opacity-70">
               Selected branch
@@ -201,10 +252,56 @@ export default function Shop() {
                 {BRANCHES.map((b) => <option key={b.id} value={b.id}>{b.label}</option>)}
               </select>
             </label>
-            <input id="order-name" aria-label="Full name" aria-invalid={missing === "name"} className={`min-h-[48px] rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "name" ? "border-red-500 ring-2 ring-red-300 bg-red-50/60 dark:bg-red-950/30" : "border-slate-200 dark:border-white/10"}`} placeholder="Full name *" value={name} onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
-            <input aria-label="Mobile number" className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="Mobile number" value={mobile} onChange={(e) => setMobile(e.target.value)} />
-            <input aria-label="Delivery address" className="min-h-[48px] rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base sm:col-span-2 outline-none focus:ring-2 focus:ring-red-400" placeholder="Delivery / pickup address" value={address} onChange={(e) => setAddress(e.target.value)} />
+            {fulfillment === "pickup" ? (
+              <p className="sm:col-span-2 flex items-start gap-2 rounded-2xl border border-sky-300/50 bg-sky-50/80 dark:bg-cyan-950/30 px-3 py-2.5 text-sm">
+                <Store size={17} aria-hidden className="mt-0.5 shrink-0" />
+                <span>Pickup at <b>RF Frozen Meat Corp — {BRANCHES.find((b) => b.id === branch)?.label} branch</b> (exact address to follow). No delivery address needed.</span>
+              </p>
+            ) : (
+              <label className="sm:col-span-2 text-sm font-semibold">
+                Delivery address *
+                <input id="order-address" aria-label="Delivery address" aria-invalid={missing === "address"}
+                  className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "address" ? "border-red-500 ring-2 ring-red-300" : "border-slate-200 dark:border-white/10"}`}
+                  placeholder="House / street / barangay / city *" value={address} onChange={(e) => { setAddress(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
+              </label>
+            )}
+            <label className="text-sm font-semibold">Contact person — full name *
+              <input id="order-name" list="rf-saved-names" aria-label="Contact person full name" aria-invalid={missing === "name"}
+                className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "name" ? "border-red-500 ring-2 ring-red-300 bg-red-50/60 dark:bg-red-950/30" : "border-slate-200 dark:border-white/10"}`}
+                placeholder="e.g. Maria Santos *" value={name} onChange={(e) => { setName(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
+              <datalist id="rf-saved-names">
+                {savedClients.map((c, i) => <option key={i} value={c.name}>{c.company ? `${c.company} • ${c.mobile}` : c.mobile}</option>)}
+              </datalist>
+            </label>
+            <label className="text-sm font-semibold">Company name <span className="font-normal opacity-60">(printed on receipt)</span>
+              <input aria-label="Company name" className="mt-1 min-h-[48px] w-full rounded-xl border border-slate-200 dark:border-white/10 px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400" placeholder="e.g. Santos Meatshop (optional)" value={company} onChange={(e) => setCompany(e.target.value)} />
+            </label>
+            <label className="sm:col-span-2 text-sm font-semibold">Contact mobile number *
+              <input id="order-mobile" aria-label="Contact mobile number" aria-invalid={missing === "mobile"} inputMode="tel"
+                className={`mt-1 min-h-[48px] w-full rounded-xl border px-3 py-2.5 text-base outline-none focus:ring-2 focus:ring-red-400 ${missing === "mobile" ? "border-red-500 ring-2 ring-red-300" : "border-slate-200 dark:border-white/10"}`}
+                placeholder="09xx xxx xxxx *" value={mobile} onChange={(e) => { setMobile(e.target.value); if (e.target.value.trim()) setMissing(null); }} />
+            </label>
           </div>
+          {missing === "name" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Please enter the contact person&apos;s name.</p>}
+          {missing === "mobile" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Mobile number is required so the branch can contact you.</p>}
+          {missing === "address" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Delivery needs an address — or switch to Pickup.</p>}
+          {savedClients.length > 0 && (
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Saved names">
+              {savedClients.slice(0, 5).map((c, i) => (
+                <button key={i} type="button" onClick={() => fillClient(c)} className="min-h-[40px] rounded-full glass px-3 text-sm font-semibold">↩ {c.name}</button>
+              ))}
+            </div>
+          )}
+          {myHistory.length > 0 && (
+            <details className="mt-2 rounded-2xl border border-white/50 dark:border-white/10 bg-white/50 dark:bg-black/20 p-2.5">
+              <summary className="flex min-h-[44px] cursor-pointer items-center gap-2 text-sm font-bold"><History size={16} aria-hidden /> My order history on this device ({myHistory.length})</summary>
+              <ul className="mt-1 space-y-1 text-sm">
+                {myHistory.slice(0, 8).map((h) => (
+                  <li key={h.trackingId}><a href={`/track/${h.trackingId}`} className="font-mono underline">{h.trackingId}</a> • {h.branch} • ₱{h.total.toLocaleString()} • {h.date}</li>
+                ))}
+              </ul>
+            </details>
+          )}
 
           <h2 className="flex items-center gap-2 font-display mt-6 text-xl font-bold tracking-wide"><Snowflake size={20} aria-hidden /> 2 • Pick items</h2>
           {missing === "name" && <p className="mt-1 text-sm font-semibold text-red-700 dark:text-red-300">Please enter your name first — we scrolled you to the missing field.</p>}

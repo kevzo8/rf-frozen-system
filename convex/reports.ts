@@ -77,12 +77,13 @@ export const credit = query({
     );
     const byCustomer = new Map<string, typeof rows>();
     for (const o of rows) {
-      const k = o.customerName;
+      // normalized dedupe key: collapsed-lowercase (old rows lack customerKey)
+      const k = o.customerKey ?? o.customerName.trim().replace(/\s+/g, " ").toLowerCase();
       if (!byCustomer.has(k)) byCustomer.set(k, []);
       byCustomer.get(k)!.push(o);
     }
-    return [...byCustomer.entries()].map(([customer, list]) => ({
-      customer,
+    return [...byCustomer.entries()].map(([, list]) => ({
+      customer: list[0].customerName.trim().replace(/\s+/g, " ").toUpperCase(),
       lines: list.map((o) => ({ date: new Date(o.createdAt).toISOString().slice(0, 10), or: o.invoiceNo ?? o.trackingId, bill: o.finalTotal ?? o.estimateTotal, payment: o.status, balance: o.finalTotal ?? o.estimateTotal })),
       total: list.reduce((s, o) => s + (o.finalTotal ?? o.estimateTotal), 0),
     }));

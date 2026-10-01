@@ -41,7 +41,11 @@ export default defineSchema({
   orders: defineTable({
     trackingId: v.string(),
     branch: v.string(),
-    customerName: v.string(),
+    customerName: v.string(), // receipt name, normalized ALL CAPS (company or contact)
+    customerKey: v.optional(v.string()), // dedupe key: collapsed-lowercase
+    contactName: v.optional(v.string()), // contact person full name, ALL CAPS
+    companyName: v.optional(v.string()), // company / receipt name, ALL CAPS
+    fulfillment: v.optional(v.union(v.literal("pickup"), v.literal("delivery"))),
     mobile: v.optional(v.string()),
     address: v.optional(v.string()),
     status: v.union(
